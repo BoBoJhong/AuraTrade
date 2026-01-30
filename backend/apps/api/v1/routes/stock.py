@@ -6,6 +6,7 @@ import logging
 from apps.core.database import get_db
 from apps.core.services.yahoo_finance import YahooFinanceService
 from apps.core.services.technical_indicators import TechnicalIndicatorService
+from apps.core.services.stock_list_manager import stock_list_manager
 from apps.schemas.stock import StockResponse
 from apps.models.stock import Stock
 from apps.core.dependencies import get_current_user
@@ -183,4 +184,55 @@ async def get_technical_indicators(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to calculate indicators: {str(e)}"
+        )
+
+@router.post("/stocks/refresh-list")
+async def refresh_stock_list(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    手動更新股票清單（從台灣證交所 API 抓取最新資料）
+    ⚠️ 管理員功能：更新所有台股 + 上櫃股票清單
+    """
+    try:
+        stocks = await stock_list_manager.get_all_stocks(force_refresh=True)
+        return {
+            "success": True,
+            "total_stocks": len(stocks),
+            "markets": {
+                "TWSE": len([s for s in stocks if s['market'] == 'TWSE']),
+                "TPEX": len([s for s in stocks if s['market'] == 'TPEX']),
+                "US": len([s for s in stocks if s['market'] == 'US'])
+            },
+            "message": f"✅ 已更新 {len(stocks)} 檔股票清單"
+        }
+    except Exception as e:
+        logger.error(f"更新股票清單失敗: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"更新失敗: {str(e)}"
+        )
+
+@router.get("/stocks/stats")
+async def get_stock_stats(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    查詢股票清單統計資料
+    """
+    try:
+        stocks = await stock_list_manager.get_all_stocks()
+        return {
+            "total": len(stocks),
+            "by_market": {
+                "TWSE": len([s for s in stocks if s['market'] == 'TWSE']),
+                "TPEX": len([s for s in stocks if s['market'] == 'TPEX']),
+                "US": len([s for s in stocks if s['market'] == 'US'])
+            },
+            "last_updated": "從快取載入" if stocks else "尚未初始化"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
         )

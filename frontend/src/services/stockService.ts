@@ -1,17 +1,17 @@
 /// <reference types="vite/client" />
 import axios from 'axios'
-import { useAuthStore } from '../stores/authStore'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const api = axios.create({
     baseURL: `${API_URL}/api/v1`,
+    timeout: 30000,
 })
 
 // Request interceptor to add token
 api.interceptors.request.use(
     (config) => {
-        const token = useAuthStore.getState().accessToken
+        const token = localStorage.getItem('access_token')
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }

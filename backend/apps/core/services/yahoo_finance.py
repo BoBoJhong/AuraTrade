@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 import json
 import redis.asyncio as redis
 from apps.core.config import settings
+from apps.core.services.stock_list_manager import stock_list_manager
 
 # Import new data sources
 try:
@@ -49,12 +50,29 @@ redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
 # Mock data for testing when Yahoo Finance is rate limited
 # 更新日期: 2026-01-30 (使用最新市場價格)
 MOCK_STOCKS = {
+    # 台股權值股
     "2330.TW": {"name": "台積電", "price": 1775.0, "market": "TW", "sector": "半導體"},
     "2317.TW": {"name": "鴻海", "price": 215.5, "market": "TW", "sector": "電子製造"},
+    "2311.TW": {"name": "日月光投控", "price": 145.5, "market": "TW", "sector": "半導體"},
+    "2454.TW": {"name": "聯發科", "price": 1185.0, "market": "TW", "sector": "半導體"},
+    "2308.TW": {"name": "台達電", "price": 398.5, "market": "TW", "sector": "電子"},
+    "2882.TW": {"name": "國泰金", "price": 68.2, "market": "TW", "sector": "金融"},
+    "2412.TW": {"name": "中華電", "price": 128.5, "market": "TW", "sector": "電信"},
+    "2881.TW": {"name": "富邦金", "price": 89.7, "market": "TW", "sector": "金融"},
+    # ETF
     "0050.TW": {"name": "元大台灣50", "price": 182.5, "market": "TW", "sector": "ETF"},
+    "006208.TW": {"name": "富邦台50", "price": 90.2, "market": "TW", "sector": "ETF"},
+    "0056.TW": {"name": "元大高股息", "price": 39.8, "market": "TW", "sector": "ETF"},
+    "00878.TW": {"name": "國泰永續高股息", "price": 25.1, "market": "TW", "sector": "ETF"},
+    "00679B.TW": {"name": "元大美債20年", "price": 35.6, "market": "TW", "sector": "ETF"},
+    # 美股
     "AAPL": {"name": "Apple Inc.", "price": 151.5, "market": "US", "sector": "Technology"},
     "TSLA": {"name": "Tesla Inc.", "price": 262.0, "market": "US", "sector": "Automotive"},
     "MSFT": {"name": "Microsoft Corporation", "price": 405.2, "market": "US", "sector": "Technology"},
+    "GOOGL": {"name": "Alphabet Inc.", "price": 142.8, "market": "US", "sector": "Technology"},
+    "NVDA": {"name": "NVIDIA Corporation", "price": 505.3, "market": "US", "sector": "Technology"},
+    "AMZN": {"name": "Amazon.com Inc.", "price": 178.9, "market": "US", "sector": "E-commerce"},
+    "META": {"name": "Meta Platforms Inc.", "price": 482.6, "market": "US", "sector": "Technology"},
 }
 
 class YahooFinanceService:
@@ -396,11 +414,11 @@ class YahooFinanceService:
     @staticmethod
     async def search_stocks(query: str) -> List[Dict[str, Any]]:
         """
-        Search for stocks with intelligent symbol lookup.
-        Supports:
-        - Direct symbol lookup (AAPL, MSFT)
-        - Taiwan stock codes (2330 -> 2330.TW, 2317 -> 2317.TW)
-        - Full Taiwan symbols (2330.TW, 2330.TWO)
+        搜尋股票 - 整合完整股票清單管理器
+        支援：
+        - 台灣上市/上櫃所有股票（2000+ 檔）
+        - 美股主流股票
+        - 模糊搜尋代號和名稱
         """
         results = []
         query = query.strip().upper()
@@ -408,40 +426,91 @@ class YahooFinanceService:
         if not query:
             return results
         
-        # List of symbols to try
-        symbols_to_try = []
-        
-        # If it's a pure number (Taiwan stock code)
-        if query.isdigit():
-            # Try both TW (main board) and TWO (OTC)
-            symbols_to_try.append(f"{query}.TW")
-            symbols_to_try.append(f"{query}.TWO")
-        # If it already has .TW or .TWO suffix
-        elif ".TW" in query or ".TWO" in query:
-            symbols_to_try.append(query)
-        # Otherwise treat as US stock or other market
-        else:
-            symbols_to_try.append(query)
-            # Also try common variations
-            if not any(c in query for c in ['.', '-']):
-                # For US stocks without exchange suffix
-                symbols_to_try.append(query)
-        
-        # Try each symbol
-        for symbol in symbols_to_try:
-            try:
-                info = await YahooFinanceService.get_stock_info(symbol)
-                if info and info.get('price'):  # Only add if we got valid price data
-                    # Avoid duplicates
-                    if not any(r['symbol'] == info['symbol'] for r in results):
-                        results.append(info)
-                        # For Taiwan stocks, if we found it on TW, don't try TWO
-                        if ".TW" in symbol:
-                            break
-            except Exception as e:
-                logger.debug(f"Could not fetch {symbol}: {e}")
-                continue
+        # 🎯 優先從完整股票清單搜尋（台股 2000+ 檔）
+        try:
+            matched_stocks = await stock_list_manager.search_stocks(query, limit=10)
+            logger.info(f"🔍 從股票清單找到 {len(matched_stocks)} 檔: {query}")
             
+            # 對找到的每一檔，嘗試從 Yahoo Finance 獲取即時價格
+            for stock in matched_stocks:
+                symbol = stock['symbol']
+                try:
+                    # 嘗試獲取即時價格
+                    price = await YahooFinanceService.get_stock_price(symbol)
+                    info = await YahooFinanceService.get_stock_info(symbol)
+                    
+                    if info:
+                        results.append(info)
+                    elif price:
+                        # 如果只有價格，用基本資訊
+                        results.append({
+                            'symbol': symbol,
+                            'name': stock['name'],
+                            'market': stock['market'],
+                            'price': price
+                        })
+                    else:
+                        # 即使沒有即時價格，也加入結果（讓用戶知道這檔股票存在）
+                        results.append({
+                            'symbol': symbol,
+                            'name': stock['name'],
+                            'market': stock['market'],
+                            'price': 0.0  # 標記為無價格
+                        })
+                        logger.warning(f"⚠️ {symbol} 找不到價格，但股票存在")
+                except Exception as e:
+                    logger.debug(f"無法獲取 {symbol} 價格: {e}")
+                    # 仍然加入結果
+                    results.append({
+                        'symbol': symbol,
+                        'name': stock['name'],
+                        'market': stock['market'],
+                        'price': 0.0
+                    })
+        except Exception as e:
+            logger.error(f"股票清單搜尋失敗: {e}")
+        
+        # 📌 Fallback: 如果還是找不到，嘗試直接查 Yahoo Finance
+        if not results:
+            logger.info(f"⚙️ Fallback to direct Yahoo Finance query: {query}")
+            symbols_to_try = []
+            
+            # 台股代號邏輯
+            if query.isdigit():
+                symbols_to_try.append(f"{query}.TW")
+                symbols_to_try.append(f"{query}.TWO")
+            elif ".TW" in query or ".TWO" in query:
+                symbols_to_try.append(query)
+            else:
+                symbols_to_try.append(query)
+            
+            for symbol in symbols_to_try:
+                try:
+                    info = await YahooFinanceService.get_stock_info(symbol)
+                    if info and info.get('price'):
+                        if not any(r['symbol'] == info['symbol'] for r in results):
+                            results.append(info)
+                            if ".TW" in symbol:
+                                break
+                except Exception as e:
+                    logger.debug(f"Could not fetch {symbol}: {e}")
+        
+        # 🔧 最終 Fallback: Mock data
+        if not results:
+            logger.info(f"⚠️ Final fallback to MOCK_STOCKS: {query}")
+            for mock_symbol, mock_data in MOCK_STOCKS.items():
+                if (query in mock_symbol or 
+                    query in mock_data['name'] or
+                    mock_symbol.replace('.TW', '').replace('.TWO', '') == query):
+                    results.append({
+                        'symbol': mock_symbol,
+                        'name': mock_data['name'],
+                        'market': mock_data['market'],
+                        'sector': mock_data.get('sector'),
+                        'price': mock_data['price']
+                    })
+        
+        logger.info(f"✅ 搜尋 '{query}' 返回 {len(results)} 檔股票")
         return results
 
     @staticmethod

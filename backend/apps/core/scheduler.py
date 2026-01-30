@@ -4,7 +4,7 @@ from datetime import datetime
 import logging
 from sqlalchemy import select
 
-from apps.core.database import get_db_context
+from apps.core.database import async_session
 from apps.models.stock_news import StockNews
 from apps.core.services.google_news_service import GoogleNewsService
 from apps.core.services.gemini_service import gemini_service
@@ -50,7 +50,7 @@ class NewsScheduler:
                 return
             
             # Save to database
-            async with get_db_context() as db:
+            async with async_session() as db:
                 saved_count = 0
                 for news_item in news_items:
                     # Check if exists
@@ -90,14 +90,34 @@ class NewsScheduler:
             logger.error(f"Failed to fetch news for {symbol}: {e}")
     
     async def fetch_all_monitored_stocks(self):
-        """Fetch news for all monitored stocks"""
-        logger.info("Starting scheduled news fetch for all monitored stocks...")
+        """Fetch news for all stocks in user watchlists"""
+        logger.info("Starting scheduled news fetch for watchlist stocks...")
         
-        for symbol, stock_name in MONITORED_STOCKS:
-            try:
-                await self.fetch_and_save_stock_news(symbol, stock_name)
-            except Exception as e:
-                logger.error(f"Error fetching news for {symbol}: {e}")
+        try:
+            # Get unique symbols from all user watchlists
+            async with async_session() as db:
+                from apps.models.stock import Watchlist, Stock
+                stmt = select(Stock.symbol, Stock.name).join(
+                    Watchlist, Stock.symbol == Watchlist.symbol
+                ).distinct()
+                result = await db.execute(stmt)
+                watchlist_stocks = result.all()
+                
+                if not watchlist_stocks:
+                    logger.warning("No stocks in user watchlists, using default list")
+                    # Fallback to default stocks if no watchlist
+                    watchlist_stocks = MONITORED_STOCKS
+                
+                logger.info(f"Found {len(watchlist_stocks)} unique stocks to monitor")
+                
+                for symbol, stock_name in watchlist_stocks:
+                    try:
+                        await self.fetch_and_save_stock_news(symbol, stock_name or symbol)
+                    except Exception as e:
+                        logger.error(f"Error fetching news for {symbol}: {e}")
+        
+        except Exception as e:
+            logger.error(f"Error in fetch_all_monitored_stocks: {e}")
         
         logger.info("Completed scheduled news fetch")
     

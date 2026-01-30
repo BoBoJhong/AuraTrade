@@ -3,18 +3,60 @@ import { StockSearch } from '../../components/stocks/StockSearch'
 import { WatchlistCard } from '../../components/stocks/WatchlistCard'
 import { PositionCard } from '../../components/stocks/PositionCard'
 import { RecommendedStocks } from '../../components/stocks/RecommendedStocks'
+import { NewsPanel } from '../../components/stocks/NewsPanel'
 import { useAuthStore } from '../../stores/authStore'
 import { Button } from '../../components/ui/Button'
 import { NotificationBell } from '../../components/ui/NotificationBell'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 
 type ViewMode = 'watchlist' | 'recommended' | 'positions';
+
+interface WatchlistItem {
+    id: number
+    symbol: string
+    name: string
+    market: string
+}
 
 export const DashboardPage = () => {
     const { user, logout } = useAuthStore()
     const navigate = useNavigate()
     const [viewMode, setViewMode] = useState<ViewMode>('watchlist')
+    const [watchlistStocks, setWatchlistStocks] = useState<WatchlistItem[]>([])
+    const [selectedStock, setSelectedStock] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (viewMode === 'watchlist') {
+            fetchWatchlist()
+        }
+    }, [viewMode])
+
+    const fetchWatchlist = async () => {
+        try {
+            const token = localStorage.getItem('access_token')
+            if (!token) return
+
+            const response = await axios.get('http://localhost:8000/api/v1/watchlist', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            
+            const stocks = response.data.map((item: any) => ({
+                id: item.id,
+                symbol: item.stock.symbol,
+                name: item.stock.name,
+                market: item.stock.market
+            }))
+            
+            setWatchlistStocks(stocks)
+            if (stocks.length > 0 && !selectedStock) {
+                setSelectedStock(stocks[0].symbol)
+            }
+        } catch (error) {
+            console.error('Failed to fetch watchlist:', error)
+        }
+    }
 
     const handleLogout = () => {
         logout()
@@ -150,13 +192,56 @@ export const DashboardPage = () => {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {viewMode === 'watchlist' && (
-                    <div className="mb-8 animate-fadeIn">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-1 h-8 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-                            <h2 className="text-3xl font-bold text-white">我的自選股</h2>
+                    <>
+                        <div className="mb-8 animate-fadeIn">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-1 h-8 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
+                                <h2 className="text-3xl font-bold text-white">我的自選股</h2>
+                            </div>
+                            <WatchlistCard />
                         </div>
-                        <WatchlistCard />
-                    </div>
+                        
+                        {/* Market News Section */}
+                        <div className="mb-8 animate-fadeIn">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full"></div>
+                                    <h2 className="text-3xl font-bold text-white">市場快訊</h2>
+                                    <span className="text-sm text-gray-400 ml-2">AI 分析自選股票動態</span>
+                                </div>
+                                
+                                {/* Stock Selector */}
+                                {watchlistStocks.length > 0 && (
+                                    <select
+                                        value={selectedStock || ''}
+                                        onChange={(e) => setSelectedStock(e.target.value)}
+                                        className="px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                                    >
+                                        {watchlistStocks.map((stock) => (
+                                            <option key={stock.symbol} value={stock.symbol}>
+                                                {stock.name} ({stock.symbol})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+                            
+                            {watchlistStocks.length > 0 && selectedStock ? (
+                                <NewsPanel 
+                                    symbol={selectedStock} 
+                                    stockName={watchlistStocks.find(s => s.symbol === selectedStock)?.name}
+                                />
+                            ) : (
+                                <div className="glass rounded-2xl p-12 text-center">
+                                    <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                    </svg>
+                                    <p className="text-gray-400 mb-2">尚未加入自選股</p>
+                                    <p className="text-gray-600 text-sm">請先搜尋並加入股票到自選清單</p>
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
                 
                 {viewMode === 'recommended' && (

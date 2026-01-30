@@ -13,8 +13,9 @@ class GeminiService:
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if self.api_key:
             genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
-            logger.info("Gemini AI service initialized successfully")
+            # Use available model: gemini-flash-latest or gemini-pro-latest
+            self.model = genai.GenerativeModel('models/gemini-flash-latest')
+            logger.info("Gemini AI service initialized successfully with gemini-flash-latest")
         else:
             self.model = None
             logger.warning("GEMINI_API_KEY not found, AI analysis disabled")
@@ -22,6 +23,26 @@ class GeminiService:
     def is_available(self) -> bool:
         """Check if Gemini AI service is available"""
         return self.model is not None
+    
+    async def generate_text(self, prompt: str) -> Optional[str]:
+        """
+        Generate text response from Gemini AI
+        
+        Args:
+            prompt: Text prompt for generation
+        
+        Returns:
+            Generated text or None if failed
+        """
+        if not self.is_available():
+            return None
+        
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            logger.error(f"Gemini text generation failed: {e}")
+            return None
     
     async def analyze_news_sentiment(
         self,
@@ -47,23 +68,39 @@ class GeminiService:
         
         try:
             prompt = f"""
-Analyze the following stock news and provide sentiment analysis:
+你是專業的股市分析師。分析以下股票新聞的情緒傾向：
 
-Title: {title}
-Summary: {summary}
+標題: {title}
+摘要: {summary}
 
-Please analyze the sentiment and provide response in JSON format:
+請以 JSON 格式回答：
 {{
     "sentiment": "positive/negative/neutral",
-    "sentiment_score": -1.0 to 1.0 (negative to positive),
-    "reasoning": "Brief explanation of the sentiment"
+    "sentiment_score": -1.0 到 1.0 之間的數字,
+    "reasoning": "簡短說明判斷依據"
 }}
 
-Rules:
-- positive: Good news for stock price (earnings beat, new products, partnerships)
-- negative: Bad news for stock price (losses, scandals, lawsuits)
-- neutral: Factual news without clear impact
-- Score: -1.0 (very negative) to 1.0 (very positive)
+判斷標準（要敏銳識別情緒）：
+【利多 positive】分數 +0.3 到 +1.0：
+- 股價上漲、突破新高、創新高
+- 營收/獲利成長、超出預期
+- 獲獎、排名提升、市占率增加
+- 新產品、新訂單、新合作
+- 分析師看好、目標價上調
+- 大單買進、外資買超
+
+【利空 negative】分數 -0.3 到 -1.0：
+- 股價下跌、跌破支撐、翻黑
+- 營收/獲利衰退、不如預期
+- 賣壓、大量賣出、外資賣超
+- 裁員、虧損、訴訟、醜聞
+- 分析師降評、目標價下調
+
+【中性 neutral】分數 -0.2 到 +0.2：
+- 純粹數據陳述，無明顯正負面意涵
+- 例如：「收盤價XXX元」「成交量XXX張」
+
+注意：只有完全中立的事實陳述才判定為 neutral，有任何正負面傾向都要明確標示！
 """
             
             response = self.model.generate_content(prompt)

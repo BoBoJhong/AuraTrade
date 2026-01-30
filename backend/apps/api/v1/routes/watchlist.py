@@ -10,7 +10,12 @@ from apps.models.stock import Watchlist, Stock
 from apps.models.user import User
 from apps.core.dependencies import get_current_user
 from apps.core.services.yahoo_finance import YahooFinanceService
+from apps.core.services.google_news_service import GoogleNewsService
+from apps.core.services.gemini_service import gemini_service
+from apps.models.stock_news import StockNews
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Watchlist"])
 
 @router.get("/watchlist", response_model=List[WatchlistResponse])
@@ -111,6 +116,54 @@ async def add_to_watchlist(
         db.add(watchlist_item)
         await db.commit()
         await db.refresh(watchlist_item)
+        
+        # Auto-fetch news and analyze with AI for new watchlist item
+        logger.info(f"Auto-fetching news for newly added stock: {stock_symbol}")
+        try:
+            # Fetch news from Google News
+            news_service = GoogleNewsService()
+            news_items = await news_service.fetch_stock_news(stock_symbol, stock_name, days=7)
+            
+            saved_count = 0
+            for news_item in news_items:
+                # Check if news already exists
+                existing = await db.execute(
+                    select(StockNews).where(StockNews.url == news_item['url'])
+                )
+                if existing.scalar_one_or_none():
+                    continue
+                
+                # AI sentiment analysis
+                sentiment_data = None
+                if gemini_service.is_available():
+                    sentiment_data = await gemini_service.analyze_news_sentiment(
+                        title=news_item['title'],
+                        summary=news_item.get('summary', '')
+                    )
+                
+                # Save news
+                news_obj = StockNews(
+                    symbol=stock_symbol,
+                    title=news_item['title'],
+                    summary=news_item.get('summary', ''),
+                    content=news_item.get('content', ''),
+                    source=news_item['source'],
+                    url=news_item['url'],
+                    published_at=news_item['published_at'],
+                    sentiment=sentiment_data['sentiment'] if sentiment_data else 'neutral',
+                    sentiment_score=sentiment_data['sentiment_score'] if sentiment_data else 0.0
+                )
+                db.add(news_obj)
+                saved_count += 1
+            
+            if saved_count > 0:
+                await db.commit()
+                logger.info(f"Successfully fetched and analyzed {saved_count} news for {stock_symbol}")
+        except Exception as e:
+            logger.warning(f"Failed to auto-fetch news for {stock_symbol}: {e}")
+            # Don't fail the entire request if news fetch fails
+            pass
+            
     except IntegrityError:
         await db.rollback()
         raise HTTPException(

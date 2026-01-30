@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apps.core.config import settings
-from apps.api.v1.routes import auth, users, stock, watchlist, alerts, positions, market, recommendations
+from apps.api.v1.routes import auth, users, stock, watchlist, alerts, positions, market, recommendations, news, websocket, transactions
 
 app = FastAPI(
     title="AuraTrade API",
@@ -30,7 +30,9 @@ app.include_router(alerts.router, prefix="/api/v1")
 app.include_router(positions.router, prefix="/api/v1")
 app.include_router(market.router, prefix="/api/v1")
 app.include_router(recommendations.router, prefix="/api/v1")
-# app.include_router(news.router, prefix="/api/v1")  # Temporarily disabled
+app.include_router(news.router, prefix="/api/v1")
+app.include_router(websocket.router, prefix="/api/v1")
+app.include_router(transactions.router, prefix="/api/v1")
 
 # Startup Event - Initialize Database
 @app.on_event("startup")
@@ -41,17 +43,17 @@ async def startup_event():
     await init_db()
     print("✓ Database initialized successfully")
     
-    # TODO: Enable news scheduler after fixing file encoding issues
-    # from apps.core.scheduler import news_scheduler
-    # news_scheduler.start()
-    # print("✓ News scheduler started successfully")
+    # Start news scheduler
+    from apps.core.scheduler import news_scheduler
+    news_scheduler.start()
+    print("✓ News scheduler started successfully")
 
 # Shutdown Event
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    # from apps.core.scheduler import news_scheduler
-    # news_scheduler.stop()
+    from apps.core.scheduler import news_scheduler
+    news_scheduler.stop()
     print("✓ Application shutdown")
 
 # Health Check
