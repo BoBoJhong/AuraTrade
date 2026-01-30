@@ -1,0 +1,120 @@
+@startuml
+!theme plain
+title AuraTrade 資料庫 ER 圖
+' Author: AuraTrade Team
+' Version: 1.0
+' Last Updated: 2026-01-29
+
+skinparam linetype ortho
+
+' 用戶相關
+entity "users" as users {
+  * user_id : UUID <<PK>>
+  --
+  * email : VARCHAR(255) <<UNIQUE>>
+  * password_hash : VARCHAR(255)
+  * username : VARCHAR(100)
+  * created_at : TIMESTAMP
+  * is_active : BOOLEAN
+}
+
+' 股票基本資料
+entity "stocks" as stocks {
+  * stock_code : VARCHAR(10) <<PK>>
+  --
+  * name : VARCHAR(100)
+  * market : VARCHAR(20)
+  * industry : VARCHAR(50)
+  * created_at : TIMESTAMP
+}
+
+' 關注清單
+entity "watchlists" as watchlists {
+  * watchlist_id : UUID <<PK>>
+  --
+  * user_id : UUID <<FK>>
+  * stock_code : VARCHAR(10) <<FK>>
+  * added_at : TIMESTAMP
+  * notes : TEXT
+}
+
+' 歷史股價
+entity "price_histories" as prices {
+  * price_id : UUID <<PK>>
+  --
+  * stock_code : VARCHAR(10) <<FK>>
+  * price : DECIMAL(10,2)
+  * volume : BIGINT
+  * change : DECIMAL(10,2)
+  * change_percent : DECIMAL(5,2)
+  * recorded_at : TIMESTAMP
+}
+
+' 新聞
+entity "news" as news {
+  * news_id : UUID <<PK>>
+  --
+  * stock_code : VARCHAR(10) <<FK>>
+  * title : VARCHAR(255)
+  * content : TEXT
+  * source : VARCHAR(100)
+  * url : VARCHAR(500)
+  * sentiment : VARCHAR(20)
+  * published_at : TIMESTAMP
+  * created_at : TIMESTAMP
+}
+
+' AI 分析結果
+entity "ai_analyses" as ai {
+  * analysis_id : UUID <<PK>>
+  --
+  * stock_code : VARCHAR(10) <<FK>>
+  * user_id : UUID <<FK>>
+  * recommendation : VARCHAR(20)
+  * confidence : DECIMAL(3,2)
+  * reasoning : TEXT
+  * created_at : TIMESTAMP
+}
+
+' 通知記錄
+entity "notifications" as notifications {
+  * notification_id : UUID <<PK>>
+  --
+  * user_id : UUID <<FK>>
+  * type : VARCHAR(50)
+  * title : VARCHAR(255)
+  * message : TEXT
+  * is_read : BOOLEAN
+  * created_at : TIMESTAMP
+}
+
+' 關係定義
+users ||--o{ watchlists : "has"
+users ||--o{ ai_analyses : "requests"
+users ||--o{ notifications : "receives"
+
+stocks ||--o{ watchlists : "in"
+stocks ||--o{ prices : "has"
+stocks ||--o{ news : "related to"
+stocks ||--o{ ai_analyses : "analyzed"
+
+note right of users
+  用戶資料表
+  - 認證與授權
+  - 用戶偏好設定
+end note
+
+note right of stocks
+  股票基本資料
+  - 台股資料
+  - 分類與產業
+end note
+
+note bottom of ai_analyses
+  AI 分析結果
+  - 投資建議（買入/持有/賣出）
+  - 信心度分數
+  - 分析原因
+end note
+
+@enduml

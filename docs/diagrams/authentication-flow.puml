@@ -1,0 +1,132 @@
+@startuml
+!theme plain
+title 用戶認證流程 - Sequence Diagram
+' Author: AuraTrade Team
+' Version: 1.0
+' Last Updated: 2026-01-29
+
+actor User
+participant "Web App" as Web
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "UserRepository" as Repo
+database "PostgreSQL" as DB
+
+== 用戶登入 ==
+
+User -> Web: 輸入 Email + 密碼
+activate Web
+
+Web -> Controller: POST /api/v1/auth/login\n{email, password}
+activate Controller
+
+Controller -> Service: login(email, password)
+activate Service
+
+' 查找用戶
+Service -> Repo: find_by_email(email)
+activate Repo
+
+Repo -> DB: SELECT * FROM users\nWHERE email = ?
+activate DB
+DB --> Repo: 用戶資料
+deactivate DB
+
+Repo --> Service: User 實體
+deactivate Repo
+
+alt 用戶存在
+    ' 驗證密碼
+    Service -> Service: verify_password(\nplain_password,\nhashed_password)
+    
+    alt 密碼正確
+        ' 生成 Token
+        Service -> Service: create_access_token(\nuser_id, email, role)
+        Service -> Service: create_refresh_token(\nuser_id)
+        
+        Service --> Controller: {\n  access_token,\n  refresh_token,\n  user_info\n}
+        deactivate Service
+        
+        Controller --> Web: 200 OK +\nSet-Cookie: refresh_token\n(HttpOnly)
+        deactivate Controller
+        
+        Web -> Web: 儲存 access_token\n到記憶體
+        
+        Web --> User: 登入成功\n導向首頁
+        deactivate Web
+        
+    else 密碼錯誤
+        Service --> Controller: InvalidCredentialsError
+        deactivate Service
+        Controller --> Web: 401 Unauthorized
+        deactivate Controller
+        Web --> User: 顯示「密碼錯誤」
+        deactivate Web
+    end
+    
+else 用戶不存在
+    Service --> Controller: UserNotFoundError
+    deactivate Service
+    Controller --> Web: 401 Unauthorized
+    deactivate Controller
+    Web --> User: 顯示「帳號不存在」
+    deactivate Web
+end
+
+== Token 刷新 ==
+
+... 30 分鐘後 Access Token 過期 ...
+
+User -> Web: 繼續操作
+activate Web
+
+Web -> Controller: GET /api/v1/stocks/...\nAuthorization: Bearer {expired_token}
+activate Controller
+
+Controller -> Controller: verify_token()
+Controller --> Web: 401 Token Expired
+deactivate Controller
+
+Web -> Controller: POST /api/v1/auth/refresh\nCookie: refresh_token
+activate Controller
+
+Controller -> Service: refresh_access_token(refresh_token)
+activate Service
+
+Service -> Service: verify_refresh_token()
+
+alt Refresh Token 有效
+    Service -> Service: create_access_token(\nuser_id, email, role)
+    Service --> Controller: new_access_token
+    deactivate Service
+    
+    Controller --> Web: 200 OK + new_access_token
+    deactivate Controller
+    
+    Web -> Web: 更新 access_token
+    Web -> Controller: 重試原請求
+    activate Controller
+    Controller --> Web: 200 OK + 資料
+    deactivate Controller
+    Web --> User: 顯示結果
+    deactivate Web
+    
+else Refresh Token 無效
+    Service --> Controller: InvalidTokenError
+    deactivate Service
+    Controller --> Web: 401 Unauthorized
+    deactivate Controller
+    Web --> User: 導向登入頁
+    deactivate Web
+end
+
+note right of Service
+  JWT 安全機制：
+  - Access Token: 30分鐘
+  - Refresh Token: 7天
+  - Refresh Token 存於
+    HttpOnly Cookie
+    (防止 XSS 攻擊)
+end note
+
+@enduml

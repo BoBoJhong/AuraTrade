@@ -1,0 +1,100 @@
+@startuml
+!theme plain
+title AuraTrade 系統架構圖
+' Author: AuraTrade Team
+' Version: 1.0
+' Last Updated: 2026-01-29
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+
+' 定義顏色
+!define PRIMARY #4A90E2
+!define SECONDARY #50C878
+!define EXTERNAL #FFA500
+
+' 用戶層
+package "User Layer" {
+    actor User as user
+    [Web App\n(React)] as web #PRIMARY
+    [Mobile App] as mobile #lightgray
+    [LINE Bot] as line #SECONDARY
+}
+
+' API Gateway
+node "API Gateway" as gateway #PRIMARY {
+    [Rate Limiting]
+    [Authentication]
+    [Load Balancer]
+}
+
+' 後端服務
+node "Backend Services\n(FastAPI)" as backend #PRIMARY {
+    package "API Layer" {
+        [Routes]
+        [Schemas]
+        [Middleware]
+    }
+    
+    package "Service Layer" {
+        [Stock Service]
+        [AI Service]
+        [News Service]
+        [Notification Service]
+    }
+    
+    package "Repository Layer" {
+        [Stock Repository]
+        [User Repository]
+        [News Repository]
+    }
+}
+
+' 資料層
+database "Data Layer" {
+    database "PostgreSQL" as db #PRIMARY
+    database "Redis\n(Cache)" as redis #SECONDARY
+}
+
+' 外部服務
+cloud "External Services" {
+    [Google Gemini\nAI API] as gemini #EXTERNAL
+    [LINE\nMessaging API] as lineapi #EXTERNAL
+    [Stock Price\nAPI] as stockapi #EXTERNAL
+    [News\nAPI] as newsapi #EXTERNAL
+}
+
+' 關係連接
+user --> web
+user --> mobile
+user --> line
+
+web --> gateway
+mobile --> gateway
+line --> gateway
+
+gateway --> backend
+
+backend --> db
+backend --> redis
+
+[AI Service] ..> gemini : "API Call"
+[Notification Service] ..> lineapi : "Push Message"
+[Stock Service] ..> stockapi : "Fetch Price"
+[News Service] ..> newsapi : "Crawl News"
+
+note right of backend
+  DDD 分層架構:
+  - API Layer: HTTP 請求處理
+  - Service Layer: 業務邏輯
+  - Repository Layer: 資料存取
+end note
+
+note right of db
+  資料持久化:
+  - 用戶資料
+  - 股票資料
+  - 分析結果
+end note
+
+@enduml

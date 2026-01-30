@@ -1,0 +1,105 @@
+@startuml
+!theme plain
+title 股價查詢流程 - Sequence Diagram
+' Author: AuraTrade Team
+' Version: 1.0
+' Last Updated: 2026-01-29
+
+actor User
+participant "Web App" as Web
+participant "API Gateway" as Gateway
+participant "StockController" as Controller
+participant "StockService" as Service
+participant "Redis Cache" as Cache
+participant "StockRepository" as Repo
+database "PostgreSQL" as DB
+participant "Stock API" as External
+
+User -> Web: 查詢股票 2330
+activate Web
+
+Web -> Gateway: GET /api/v1/stocks/2330/price
+activate Gateway
+
+Gateway -> Gateway: 驗證 JWT Token
+Gateway -> Gateway: Rate Limiting Check
+
+Gateway -> Controller: 轉發請求
+activate Controller
+
+Controller -> Controller: 驗證參數
+
+Controller -> Service: get_real_time_price("2330")
+activate Service
+
+' 檢查快取
+Service -> Cache: get("stock_price:2330")
+activate Cache
+
+alt 快取命中
+    Cache --> Service: 返回快取數據
+    Service --> Controller: 返回股價
+else 快取未命中
+    Cache --> Service: null
+    deactivate Cache
+    
+    ' 查詢資料庫
+    Service -> Repo: find_by_code("2330")
+    activate Repo
+    
+    Repo -> DB: SELECT * FROM stocks\nWHERE stock_code = '2330'
+    activate DB
+    
+    alt 資料存在
+        DB --> Repo: 股票資料
+        deactivate DB
+        Repo --> Service: Stock 實體
+        deactivate Repo
+        
+        ' 呼叫外部 API 取得即時價格
+        Service -> External: GET /quote/2330
+        activate External
+        External --> Service: 即時股價數據
+        deactivate External
+        
+        ' 更新快取
+        Service -> Cache: set("stock_price:2330", data, ttl=60)
+        activate Cache
+        Cache --> Service: OK
+        deactivate Cache
+        
+        Service --> Controller: 返回股價
+    else 股票不存在
+        DB --> Repo: null
+        deactivate DB
+        Repo --> Service: null
+        deactivate Repo
+        Service --> Controller: StockNotFoundError
+    end
+end
+
+deactivate Service
+
+alt 成功
+    Controller --> Gateway: 200 OK + 股價數據
+    Gateway --> Web: JSON Response
+    Web --> User: 顯示股價
+else 失敗
+    Controller --> Gateway: 404 Not Found
+    Gateway --> Web: Error Response
+    Web --> User: 顯示錯誤訊息
+end
+
+deactivate Controller
+deactivate Gateway
+deactivate Web
+
+note right of Service
+  業務邏輯：
+  1. 優先檢查快取
+  2. 快取未命中查資料庫
+  3. 呼叫外部 API
+  4. 更新快取
+end note
+
+@enduml

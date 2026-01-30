@@ -1,0 +1,95 @@
+@startuml
+!theme plain
+title AI 投資分析流程 - Sequence Diagram
+' Author: AuraTrade Team
+' Version: 1.0
+' Last Updated: 2026-01-29
+
+actor User
+participant "Web App" as Web
+participant "AIController" as Controller
+participant "AIService" as Service
+participant "StockService" as StockSvc
+participant "NewsService" as NewsSvc
+participant "Google Gemini\nAPI" as Gemini
+database "PostgreSQL" as DB
+
+User -> Web: 請求 AI 分析\n股票 2330
+activate Web
+
+Web -> Controller: POST /api/v1/ai/analyze\n{stock_code: "2330"}
+activate Controller
+
+Controller -> Service: analyze_stock("2330", user_id)
+activate Service
+
+' 1. 收集股票數據
+Service -> StockSvc: get_stock_data("2330")
+activate StockSvc
+StockSvc -> DB: 查詢股票基本資料\n+ 歷史股價
+DB --> StockSvc: 股票數據
+StockSvc --> Service: 股票資料
+deactivate StockSvc
+
+' 2. 收集新聞數據
+Service -> NewsSvc: get_recent_news("2330", days=7)
+activate NewsSvc
+NewsSvc -> DB: 查詢相關新聞
+DB --> NewsSvc: 新聞列表
+NewsSvc --> Service: 新聞數據 + 情緒分析
+deactivate NewsSvc
+
+' 3. 組織 Prompt
+Service -> Service: 組織 AI Prompt\n- 股價趨勢\n- 新聞情緒\n- 技術指標
+
+' 4. 呼叫 Gemini API
+Service -> Gemini: POST /generate\n{prompt: "分析 2330...",\n model: "gemini-pro"}
+activate Gemini
+
+Gemini -> Gemini: AI 分析處理
+
+Gemini --> Service: AI 分析結果\n{recommendation: "買入",\n confidence: 0.75,\n reasoning: "..."}
+deactivate Gemini
+
+' 5. 儲存分析結果
+Service -> DB: INSERT INTO ai_analyses\n(stock_code, recommendation,\n confidence, reasoning)
+activate DB
+DB --> Service: OK
+deactivate DB
+
+' 6. 返回結果
+Service --> Controller: 分析結果
+deactivate Service
+
+Controller --> Web: 200 OK + AI 分析
+deactivate Controller
+
+Web --> User: 顯示\n- 建議: 買入\n- 信心度: 75%\n- 分析原因
+deactivate Web
+
+note right of Service
+  AI 分析流程：
+  1. 收集多維度數據
+     - 股價歷史
+     - 新聞情緒
+     - 技術指標
+  2. 組織結構化 Prompt
+  3. 呼叫 Gemini API
+  4. 解析與儲存結果
+  5. 返回建議
+end note
+
+note right of Gemini
+  Gemini API 輸入：
+  - 股票代碼
+  - 歷史價格趨勢
+  - 新聞摘要
+  - 產業資訊
+  
+  Gemini API 輸出：
+  - 投資建議
+  - 信心度分數
+  - 分析推理
+end note
+
+@enduml
