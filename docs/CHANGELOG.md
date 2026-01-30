@@ -9,7 +9,39 @@
 
 ## [Unreleased]
 
-### 🔥 最新更新 (2026-01-30 下午)
+### 🔥 最新更新 (2026-01-30 晚上)
+
+#### 📰 新聞爬蟲系統與 AI 情緒分析
+- **Google News RSS 爬蟲**:
+  - 實作 `GoogleNewsService` 使用 RSS Feed 抓取股票相關新聞
+  - 支援台股/美股新聞爬取 (多語言支援)
+  - 自動清理 HTML 標籤並解析發布時間
+  - 新增檔案: `backend/apps/core/services/google_news_service.py`
+
+- **Gemini AI 情緒分析**:
+  - 整合 Google Gemini Pro API 進行新聞情緒分析
+  - 判斷新聞對股價的潛在影響 (正面/負面/中性)
+  - 計算情緒分數 (-1.0 ~ 1.0)
+  - 提供分析理由說明
+  - 新增檔案: `backend/apps/core/services/gemini_service.py`
+
+- **新聞數據模型**:
+  - 建立 `StockNews` 模型存儲新聞數據
+  - 欄位: 標題、摘要、來源、URL、發布時間、情緒、情緒分數
+  - 建立索引優化查詢效能 (symbol + published_at)
+  - 數據庫遷移: `003_create_stock_news_table.py`
+
+- **新聞 API 端點**:
+  - `GET /api/v1/stocks/{symbol}/news` - 查詢股票新聞
+  - `POST /api/v1/stocks/{symbol}/news/fetch` - 手動抓取新聞
+  - 支援時間範圍篩選 (1-30 天)
+  - 支援數量限制 (1-100 筆)
+  - 新增檔案: `backend/apps/api/v1/routes/news.py`
+
+- **依賴更新**:
+  - feedparser==6.0.11 (RSS 解析)
+  - python-dateutil==2.8.2 (日期處理)
+  - google-generativeai==0.3.2 (Gemini AI)
 
 #### 🐛 修復漲跌數據顯示 Bug
 - **問題**: StockDetailPage 右側顯示固定的 +0.00 (+0.00%)
@@ -38,11 +70,14 @@
 - [x] Fugle API 整合（台股即時行情）✅
 - [x] Alpha Vantage API 整合（美股 + 技術指標）✅
 - [x] AI 推薦引擎 ✅
-- [ ] 新聞爬蟲系統
+- [x] 新聞爬蟲系統 ✅
+- [x] Gemini AI 情緒分析 ✅
+- [ ] 新聞定時爬取任務 (APScheduler)
 - [ ] LINE Bot 通知功能
 
 ### 規劃中
 
+- [ ] 前端新聞面板組件
 - [ ] 推薦結果 Redis 快取優化
 - [ ] TWSE 法人買賣超數據解析
 - [ ] 五檔報價顯示

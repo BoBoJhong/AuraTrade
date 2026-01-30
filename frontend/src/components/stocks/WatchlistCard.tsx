@@ -264,7 +264,7 @@ export const WatchlistCard = () => {
                 <AlertModal
                     symbol={alertModalOpen}
                     stockName={watchlist.find(item => item.stock.symbol === alertModalOpen)?.stock.name || ''}
-                    currentPrice={latestPrices[alertModalOpen] || watchlist.find(item => item.stock.symbol === alertModalOpen)?.stock.price || 0}
+                    currentPrice={priceData[alertModalOpen]?.price || watchlist.find(item => item.stock.symbol === alertModalOpen)?.stock.price || 0}
                     isOpen={!!alertModalOpen}
                     onClose={() => setAlertModalOpen(null)}
                     onAlertCreated={() => {
@@ -275,4 +275,5 @@ export const WatchlistCard = () => {
         </div>
     )
 }
+
 
