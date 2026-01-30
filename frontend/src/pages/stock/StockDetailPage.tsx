@@ -4,6 +4,7 @@ import { stockService, StockData } from '@/services/stockService';
 import { getComprehensiveStockInfo, ComprehensiveStockInfo } from '@/services/marketService';
 import { positionService, Position } from '@/services/positionService';
 import { Button } from '@/components/ui/Button';
+import { NewsPanel } from '@/components/stocks/NewsPanel';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart 
@@ -70,10 +71,16 @@ export const StockDetailPage = () => {
     );
   }
 
-  // 從歷史數據計算漲跌
-  const prices = stockData.prices;
+  // 確保價格數據按日期升序排列（舊→新）
+  const sortedPrices = [...stockData.prices].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  // 從歷史數據計算漲跌 (最新數據在最後)
+  const prices = sortedPrices;
   const currentPrice = prices[prices.length - 1]?.close || 0;
   const previousPrice = prices.length >= 2 ? prices[prices.length - 2]?.close : currentPrice;
+  
   const change = currentPrice - previousPrice;
   const changePercent = previousPrice > 0 ? (change / previousPrice) * 100 : 0;
   
@@ -84,32 +91,53 @@ export const StockDetailPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-6">
       {/* 頂部導航 */}
       <div className="max-w-7xl mx-auto mb-6">
-        <Button onClick={() => navigate('/dashboard')} className="mb-4">
-          ← 返回首頁
-        </Button>
+        <button 
+          onClick={() => navigate('/dashboard')} 
+          className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          返回首頁
+        </button>
         
         {/* 股票標題區 */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+        <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 border border-white/30 shadow-2xl">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">
-                {stockData.info.name} ({symbol})
-              </h1>
-              <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-bold text-white">
+              <div className="flex items-center gap-3 mb-3">
+                <h1 className="text-4xl font-bold text-white">
+                  {stockData.info.name}
+                </h1>
+                <span className="text-2xl font-semibold text-gray-300">({symbol})</span>
+              </div>
+              <div className="flex items-baseline gap-6">
+                <span className="text-5xl font-bold text-white">
                   ${currentPrice.toFixed(2)}
                 </span>
-                {/* 漲跌顯示 - 直接從歷史數據計算 */}
-                <div className="flex items-center gap-2">
-                  <span className={`text-xl font-semibold ${
-                    change >= 0 ? 'text-red-400' : 'text-green-400'
+                {/* 漲跌顯示 */}
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
+                    change >= 0 ? 'bg-red-500/20 border border-red-500/30' : 'bg-green-500/20 border border-green-500/30'
                   }`}>
-                    {change >= 0 ? '↑' : '↓'}
-                    {change >= 0 ? '+' : ''}{change.toFixed(2)}
-                    <span className="text-sm ml-1">
-                      ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+                    <span className={`text-2xl font-bold ${
+                      change >= 0 ? 'text-red-400' : 'text-green-400'
+                    }`}>
+                      {change >= 0 ? '↑' : '↓'}
                     </span>
-                  </span>
+                    <div>
+                      <div className={`text-xl font-semibold ${
+                        change >= 0 ? 'text-red-400' : 'text-green-400'
+                      }`}>
+                        {change >= 0 ? '+' : ''}{change.toFixed(2)}
+                      </div>
+                      <div className={`text-sm ${
+                        change >= 0 ? 'text-red-300' : 'text-green-300'
+                      }`}>
+                        {change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {stockData.recommendation && (
                   <span className={`text-lg font-semibold ${
@@ -181,34 +209,34 @@ export const StockDetailPage = () => {
 
           {/* 股利資訊 */}
           {dividend && (
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-lg rounded-2xl p-6 border border-white/30 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                 <span className="text-2xl mr-2">💰</span>
                 股利資訊
               </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">現金股利</span>
-                  <span className="text-white font-semibold text-lg">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-gray-200">現金股利</span>
+                  <span className="text-white font-bold text-xl">
                     ${dividend.cash_dividend.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">股票股利</span>
-                  <span className="text-white font-semibold text-lg">
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-gray-200">股票股利</span>
+                  <span className="text-white font-bold text-xl">
                     {dividend.stock_dividend.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">合計股利</span>
-                  <span className="text-white font-semibold text-lg">
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-gray-200">合計股利</span>
+                  <span className="text-white font-bold text-xl">
                     ${dividend.total_dividend.toFixed(2)}
                   </span>
                 </div>
                 {dividend.ex_dividend_date && (
-                  <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                    <span className="text-gray-300">除息日</span>
-                    <span className="text-white font-semibold">
+                  <div className="flex justify-between items-center pt-3 border-t border-white/20">
+                    <span className="text-gray-200">除息日</span>
+                    <span className="text-white font-bold">
                       {dividend.ex_dividend_date}
                     </span>
                   </div>
@@ -219,8 +247,11 @@ export const StockDetailPage = () => {
 
           {/* 技術分析詳情 */}
           {stockData.recommendation && (
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4">技術指標詳情</h2>
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-lg rounded-2xl p-6 border border-white/30 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="text-2xl mr-2">🎯</span>
+                技術指標詳情
+              </h2>
               <div className="space-y-2 text-sm">
                 {stockData.recommendation.reasons.map((reason, idx) => (
                   <div key={idx} className="text-gray-300">
@@ -235,9 +266,12 @@ export const StockDetailPage = () => {
         {/* 右側：圖表區 */}
         <div className="lg:col-span-2 space-y-6">
           {/* K線圖 */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center justify-between">
-              <span>K 線圖</span>
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span className="text-2xl">📈</span>
+                價格走勢
+              </span>
               {userPosition && (
                 <span className="text-sm text-blue-400 font-normal flex items-center gap-2">
                   <span className="w-3 h-0.5 bg-blue-400"></span>
@@ -246,7 +280,7 @@ export const StockDetailPage = () => {
               )}
             </h2>
             <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={stockData.prices}>
+              <ComposedChart data={sortedPrices}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                 <XAxis 
                   dataKey="date" 
@@ -282,18 +316,21 @@ export const StockDetailPage = () => {
                     }}
                   />
                 )}
-                <Line type="monotone" dataKey="close" stroke="#ef4444" name="收盤價" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="ma5" stroke="#fbbf24" name="MA5" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="ma20" stroke="#a78bfa" name="MA20" strokeWidth={1} dot={false} />
+                <Line type="monotone" dataKey="close" stroke="#ef4444" name="收盤價" strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="ma5" stroke="#fbbf24" name="MA5" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="ma20" stroke="#a78bfa" name="MA20" strokeWidth={2} dot={false} strokeDasharray="5 5" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
 
           {/* 成交量 */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-xl font-bold text-white mb-4">成交量</h2>
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+              <span className="text-2xl">📉</span>
+              成交量
+            </h2>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stockData.prices}>
+              <BarChart data={sortedPrices}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                 <XAxis 
                   dataKey="date" 
@@ -318,11 +355,14 @@ export const StockDetailPage = () => {
           </div>
 
           {/* MACD */}
-          {stockData.prices[0]?.macd !== undefined && (
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4">MACD</h2>
+          {sortedPrices[0]?.macd !== undefined && (
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <span className="text-2xl">📊</span>
+                MACD 指標
+              </h2>
               <ResponsiveContainer width="100%" height={200}>
-                <ComposedChart data={stockData.prices}>
+                <ComposedChart data={sortedPrices}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                   <XAxis 
                     dataKey="date" 
@@ -352,11 +392,14 @@ export const StockDetailPage = () => {
           )}
 
           {/* RSI */}
-          {stockData.prices[0]?.rsi !== undefined && (
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4">RSI</h2>
+          {sortedPrices[0]?.rsi !== undefined && (
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <span className="text-2xl">🎯</span>
+                RSI 指標
+              </h2>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={stockData.prices}>
+                <LineChart data={sortedPrices}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                   <XAxis 
                     dataKey="date" 
@@ -384,6 +427,11 @@ export const StockDetailPage = () => {
               </ResponsiveContainer>
             </div>
           )}
+
+          {/* 新聞模組 */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
+            <NewsPanel symbol={symbol!} stockName={stockData.info.name} />
+          </div>
         </div>
       </div>
     </div>

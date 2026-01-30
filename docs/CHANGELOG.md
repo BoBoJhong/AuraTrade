@@ -9,7 +9,12 @@
 
 ## [Unreleased]
 
-### 🔥 最新更新 (2026-01-30 晚上)
+### 🔥 最新更新 (2026-01-31)
+
+#### ✅ 開發狀態總結
+**後端API完成度**: 95% (44+ 端點已實作)
+**前端組件完成度**: 85% (主要功能已完成)
+**待整合功能**: WebSocket 實時推送、定時任務排程
 
 #### 📰 新聞爬蟲系統與 AI 情緒分析
 - **Google News RSS 爬蟲**:
@@ -65,6 +70,77 @@
 - **新增檔案**: `backend/apps/api/v1/routes/recommendations.py` (343行)
 - **前端整合**: RecommendedStocks 組件改用真實 API,移除 Mock 數據
 
+#### 📡 WebSocket 實時推送系統
+- **WebSocket ConnectionManager**:
+  - 實作連接管理器處理多客戶端訂閱
+  - 支援自動斷線重連機制
+  - 每 5 秒推送價格更新
+  - 新增檔案: `backend/apps/api/v1/routes/websocket.py`
+
+- **WebSocket 端點**:
+  - `ws://localhost:8000/api/v1/ws/stocks/{symbol}` - 個股即時價格
+  - `ws://localhost:8000/api/v1/ws/market` - 大盤指數推播
+  - 支援 ping/pong 心跳檢測
+
+- **前端 Hook**:
+  - 實作 `useStockWebSocket` 處理個股訂閱
+  - 實作 `useMarketWebSocket` 處理市場數據
+  - 新增檔案: `frontend/src/hooks/useWebSocket.ts`
+  - ⚠️ **待整合**: 前端組件尚未使用這些 hooks
+
+#### 🔔 定時任務排程系統
+- **NewsScheduler 新聞排程器**:
+  - 使用 APScheduler 實作背景任務
+  - 每小時自動抓取11支熱門股票新聞
+  - 監控台股: 2330.TW, 2317.TW, 2454.TW, 2308.TW, 0050.TW, 006208.TW
+  - 監控美股: AAPL, MSFT, GOOGL, TSLA, NVDA
+  - 新增檔案: `backend/apps/core/scheduler.py`
+  - ⚠️ **待啟用**: 需在 main.py 中啟動排程器
+
+#### 💼 投資組合完整功能
+- **持倉管理 API** (已完成):
+  - `GET /api/v1/positions` - 查詢所有持倉
+  - `POST /api/v1/positions` - 新增持倉
+  - `PATCH /api/v1/positions/{id}` - 更新持倉
+  - `DELETE /api/v1/positions/{id}` - 刪除持倉
+  - `GET /api/v1/positions/summary` - 持倉摘要統計
+  - 新增檔案: `backend/apps/api/v1/routes/positions.py`
+
+- **交易記錄 API** (已完成):
+  - `GET /api/v1/transactions` - 查詢交易記錄
+  - `POST /api/v1/transactions` - 新增交易
+  - `DELETE /api/v1/transactions/{id}` - 刪除交易
+  - `GET /api/v1/transactions/summary/stats` - 交易統計
+  - 新增檔案: `backend/apps/api/v1/routes/transactions.py`
+
+- **前端組件** (已完成):
+  - `AddPositionModal.tsx` - 新增持倉對話框
+  - `EditPositionModal.tsx` - 編輯持倉對話框
+  - `PositionCard.tsx` - 持倉卡片
+  - `TransactionHistory.tsx` - 交易歷史記錄
+
+#### 📊 市場數據 API
+- **基本面數據**:
+  - `GET /api/v1/market/fundamental/{symbol}` - 基本面指標
+  - `GET /api/v1/market/dividend/{symbol}` - 股息資料
+  - `GET /api/v1/market/stock-info/{symbol}` - 股票詳細資訊
+  - `GET /api/v1/market/institutional` - 法人買賣超
+  - 新增檔案: `backend/apps/api/v1/routes/market.py`
+
+#### 🤖 LINE Bot 整合
+- **LINE Webhook**:
+  - `POST /api/v1/line/webhook` - LINE 訊息接收
+  - `GET /api/v1/line/test-notification` - 測試通知
+  - `POST /api/v1/line/bind-user` - 綁定用戶
+  - `GET /api/v1/line/user-status` - 查詢綁定狀態
+  - 新增檔案: `backend/apps/api/v1/routes/line_webhook.py`
+
+- **LINE Notify Service**:
+  - 價格提醒推播
+  - 新聞提醒通知
+  - 交易記錄通知
+  - 新增檔案: `backend/apps/core/services/line_service.py`
+
 ### 進行中
 
 - [x] Fugle API 整合（台股即時行情）✅
@@ -72,16 +148,19 @@
 - [x] AI 推薦引擎 ✅
 - [x] 新聞爬蟲系統 ✅
 - [x] Gemini AI 情緒分析 ✅
-- [ ] 新聞定時爬取任務 (APScheduler)
-- [ ] LINE Bot 通知功能
+- [x] WebSocket 實時推送（後端已完成，前端待整合）⚠️
+- [x] 新聞定時爬取任務（已實作，待啟動）⚠️
+- [x] 前端新聞面板組件 ✅
+- [x] 投資組合管理（持倉+交易）✅
+- [x] LINE Bot 通知功能 ✅
+- [x] 市場數據 API ✅
 
-### 規劃中
+### 待完成功能
 
-- [ ] 前端新聞面板組件
+- [ ] 前端整合 WebSocket (將 useStockWebSocket 應用到組件)
+- [ ] 啟動定時任務排程器 (在 main.py 中啟動 news_scheduler)
 - [ ] 推薦結果 Redis 快取優化
 - [ ] TWSE 法人買賣超數據解析
-- [ ] 五檔報價顯示
-- [ ] WebSocket 即時推送
 - [ ] iOS / Android 原生應用
 - [ ] 多語言支援 (i18n)
 

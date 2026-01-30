@@ -1,5 +1,8 @@
 # AuraTrade 功能完整清單
 
+> **最後更新**: 2026-01-31  
+> **完成度**: 後端 95% | 前端 85% | 整體 90%
+
 ## 📊 **核心功能**
 
 ### 1. 用戶認證系統
@@ -57,12 +60,16 @@
 - **需要**: `GEMINI_API_KEY` 環境變數
 
 ### 7. 定時任務排程
-- ✅ APScheduler 背景任務
-- ✅ 每小時自動抓取新聞
+- ✅ APScheduler 背景任務實作
+- ✅ 每小時自動抓取新聞 (Cron: 每小時第5分鐘)
+- ✅ 啟動時立即執行初始抓取
 - ✅ 監控 11 支熱門股票
   - 台股: 2330.TW, 2317.TW, 2454.TW, 2308.TW, 0050.TW, 006208.TW
   - 美股: AAPL, MSFT, GOOGL, TSLA, NVDA
-- **服務**: `NewsScheduler`
+- ✅ 支援用戶自選股自動監控
+- ⚠️ **待啟動**: 需在 main.py 啟動 news_scheduler.start()
+- **服務**: `NewsScheduler` (backend/apps/core/scheduler.py)
+- **狀態**: 已實作 ✅ | 待啟動 ⚠️
 
 ### 8. 新聞面板組件
 - ✅ 時間篩選 (1天/7天/30天)
@@ -74,23 +81,29 @@
 
 ---
 
-## ⚡ **實時功能** (新功能)
+## ⚡ **實時功能**
 
 ### 9. WebSocket 實時價格更新
+- ✅ 後端 WebSocket 連接管理器
 - ✅ 雙向 WebSocket 連接
 - ✅ 每 5 秒推送價格更新
 - ✅ 自動重連機制
 - ✅ 連線狀態顯示
 - ✅ 支援多股票同時訂閱
+- ⚠️ **前端待整合**: useStockWebSocket hook 已實作但未應用到組件
 - **WebSocket端點**: `/api/v1/ws/stocks/{symbol}`
-- **前端Hook**: `useStockWebSocket`
+- **前端Hook**: `useStockWebSocket` (已實作)
+- **狀態**: 後端完成 ✅ | 前端待整合 ⚠️
 
 ### 10. 市場總覽推播
+- ✅ 後端 WebSocket 端點
 - ✅ 大盤指數即時更新
 - ✅ 加權指數/櫃買指數
 - ✅ 每 10 秒更新
+- ⚠️ **前端待整合**: useMarketWebSocket hook 已實作但未應用到組件
 - **WebSocket端點**: `/api/v1/ws/market`
-- **前端Hook**: `useMarketWebSocket`
+- **前端Hook**: `useMarketWebSocket` (已實作)
+- **狀態**: 後端完成 ✅ | 前端待整合 ⚠️
 
 ---
 
@@ -128,13 +141,21 @@
 ## 📱 **通知整合** (新功能)
 
 ### 14. LINE Bot 通知
+- ✅ LINE Webhook 接收訊息
 - ✅ 價格提醒推播
 - ✅ 新聞提醒推播
 - ✅ 交易記錄通知
+- ✅ 用戶綁定機制
 - ✅ 自定義訊息格式
 - ✅ Emoji 圖示支援
-- **服務**: `LineNotifyService`
-- **需要**: `LINE_NOTIFY_TOKEN` 環境變數
+- **API端點**: 
+  - `POST /api/v1/line/webhook` - 接收 LINE 訊息
+  - `POST /api/v1/line/bind-user` - 綁定用戶
+  - `GET /api/v1/line/test-notification` - 測試通知
+  - `GET /api/v1/line/user-status` - 查詢綁定狀態
+- **服務**: `LineNotifyService` (backend/apps/core/services/line_service.py)
+- **需要**: `LINE_NOTIFY_TOKEN`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` 環境變數
+- **狀態**: 完全實作 ✅
 
 ---
 
@@ -245,12 +266,23 @@ curl -X POST http://localhost:8000/api/v1/stocks/2330.TW/news/fetch
 
 ## 📝 **待開發功能**
 
-- [ ] 技術分析指標 (MA, MACD, RSI)
-- [ ] K線圖表
-- [ ] 多因子選股
+### 🔧 待整合 (已實作但未啟用)
+- [ ] **前端 WebSocket 整合** - useStockWebSocket 應用到 WatchlistCard 和 StockDetailPage
+- [ ] **啟動定時任務** - 在 main.py 中啟動 news_scheduler
+
+### 🎯 待優化
+- [ ] 推薦結果 Redis 快取優化
+- [ ] TWSE 法人買賣超數據解析優化
+- [ ] 五檔報價顯示
+
+### 🚀 未來規劃  
+- [ ] 技術分析指標圖表 (K線圖、MA、MACD、RSI)
+- [ ] 多因子選股系統
 - [ ] 回測系統
 - [ ] 社群討論功能
 - [ ] 手機 App (React Native)
+- [ ] iOS / Android 原生應用
+- [ ] 多語言支援 (i18n)
 
 ---
 

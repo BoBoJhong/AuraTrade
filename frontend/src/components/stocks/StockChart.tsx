@@ -116,8 +116,13 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
             console.log('📊 历史数据:', histData.length, '条')
             console.log('📈 技术指标:', techIndicators)
             
+            // 確保數據按時間升序排列 (舊→新，最新日期在最右邊)
+            const sortedData = [...histData].sort((a, b) => 
+                new Date(a.date).getTime() - new Date(b.date).getTime()
+            )
+            
             // Merge data with indicators
-            const mergedData = histData.map((item, index) => {
+            const mergedData = sortedData.map((item, index) => {
                 // 如果沒有 OHLC 數據，使用 price 模擬
                 const price = item.price || item.close
                 const hasOHLC = item.open && item.high && item.low

@@ -29,10 +29,18 @@ export const PositionCard = () => {
       // 並行獲取所有持倉的最新價格
       const pricePromises = posData.map(async (pos) => {
         try {
-          const history = await stockService.getHistoricalData(pos.symbol, '1d');
-          const latestPrice = history[history.length - 1]?.price || pos.current_price || 0;
-          return { symbol: pos.symbol, price: latestPrice };
-        } catch {
+          const history = await stockService.getHistoricalData(pos.symbol, '5d');
+          if (history && history.length > 0) {
+            // 按日期排序，確保最新的在最後
+            const sortedHistory = [...history].sort((a, b) => 
+              new Date(a.date).getTime() - new Date(b.date).getTime()
+            );
+            const latestPrice = sortedHistory[sortedHistory.length - 1]?.price;
+            return { symbol: pos.symbol, price: latestPrice || pos.current_price || 0 };
+          }
+          return { symbol: pos.symbol, price: pos.current_price || 0 };
+        } catch (error) {
+          console.error(`獲取 ${pos.symbol} 價格失敗:`, error);
           return { symbol: pos.symbol, price: pos.current_price || 0 };
         }
       });
@@ -67,92 +75,173 @@ export const PositionCard = () => {
 
   if (isLoading) {
     return (
-      <div className="text-center text-gray-400 py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-        <p className="mt-2">載入持倉...</p>
+      <div className="glass rounded-2xl p-12 border border-white/20 animate-fadeIn">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          {/* 雙圈載入動畫 */}
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-pink-500/20 border-b-pink-500 rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
+          <div className="text-center">
+            <p className="text-white font-medium">載入投資組合...</p>
+            <p className="text-gray-400 text-sm mt-1">正在計算收益</p>
+          </div>
+          {/* 骨架屏 */}
+          <div className="w-full space-y-3 mt-6">
+            <div className="animate-pulse">
+              <div className="h-32 bg-white/5 rounded-xl mb-3"></div>
+              {[1, 2].map(i => (
+                <div key={i} className="h-24 bg-white/5 rounded-xl mb-3"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* 投資組合總覽 */}
+      {/* 投資組合總覽 - 優化數據視覺化 */}
       {summary && (
-        <div className="glass rounded-2xl p-6 border border-indigo-500/30">
-          <h3 className="text-xl font-bold text-white mb-4">📊 投資組合總覽</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">持倉數量</p>
-              <p className="text-2xl font-bold text-white">{summary.total_positions}</p>
+        <div className="glass rounded-2xl p-6 lg:p-8 border border-purple-500/30 relative overflow-hidden">
+          {/* 背景裝飾 */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full filter blur-3xl"></div>
+          
+          <div className="relative">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                <span>📊</span> 投資組合總覽
+              </h3>
+              <div className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm font-medium">
+                即時數據
+              </div>
             </div>
-            <div>
-              <p className="text-gray-400 text-sm mb-1">總成本</p>
-              <p className="text-2xl font-bold text-white">${summary.total_cost.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm mb-1">市值</p>
-              <p className="text-2xl font-bold text-white">
-                ${(() => {
-                  const totalMarketValue = positions.reduce((sum, pos) => {
-                    const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
-                    return sum + (pos.quantity * currentPrice);
-                  }, 0);
-                  return totalMarketValue.toFixed(2);
-                })()}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm mb-1">損益</p>
-              <p className={`text-2xl font-bold ${(() => {
-                const totalMarketValue = positions.reduce((sum, pos) => {
-                  const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
-                  return sum + (pos.quantity * currentPrice);
-                }, 0);
-                const profitLoss = totalMarketValue - summary.total_cost;
-                return profitLoss >= 0 ? 'text-red-400' : 'text-green-400';
-              })()}`}>
-                {(() => {
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              <div className="bg-white/5 rounded-xl p-4 lg:p-5 border border-white/10 hover:border-indigo-500/50 transition-all group">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-gray-400 text-xs lg:text-sm">持倉數量</p>
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="text-base">💼</span>
+                  </div>
+                </div>
+                <p className="text-2xl lg:text-3xl font-bold text-white">{summary.total_positions}</p>
+                <p className="text-xs text-gray-500 mt-1">支股票</p>
+              </div>
+              
+              <div className="bg-white/5 rounded-xl p-4 lg:p-5 border border-white/10 hover:border-blue-500/50 transition-all group">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-gray-400 text-xs lg:text-sm">總成本</p>
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="text-base">💰</span>
+                  </div>
+                </div>
+                <p className="text-2xl lg:text-3xl font-bold text-white">${summary.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                <p className="text-xs text-gray-500 mt-1">投入資金</p>
+              </div>
+              
+              <div className="bg-white/5 rounded-xl p-4 lg:p-5 border border-white/10 hover:border-cyan-500/50 transition-all group">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-gray-400 text-xs lg:text-sm">目前市值</p>
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="text-base">💵</span>
+                  </div>
+                </div>
+                <p className="text-2xl lg:text-3xl font-bold text-white">
+                  ${(() => {
+                    const totalMarketValue = positions.reduce((sum, pos) => {
+                      const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
+                      return sum + (pos.quantity * currentPrice);
+                    }, 0);
+                    return totalMarketValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                  })()}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">即時估值</p>
+              </div>
+              
+              <div className="bg-white/5 rounded-xl p-4 lg:p-5 border border-white/10 hover:border-purple-500/50 transition-all group">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-gray-400 text-xs lg:text-sm">總損益</p>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform ${
+                    (() => {
+                      const totalMarketValue = positions.reduce((sum, pos) => {
+                        const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
+                        return sum + (pos.quantity * currentPrice);
+                      }, 0);
+                      const profitLoss = totalMarketValue - summary.total_cost;
+                      return profitLoss >= 0 ? 'bg-green-500/10' : 'bg-red-500/10';
+                    })()
+                  }`}>
+                    <span className="text-base">{(() => {
+                      const totalMarketValue = positions.reduce((sum, pos) => {
+                        const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
+                        return sum + (pos.quantity * currentPrice);
+                      }, 0);
+                      const profitLoss = totalMarketValue - summary.total_cost;
+                      return profitLoss >= 0 ? '📈' : '📉';
+                    })()}</span>
+                  </div>
+                </div>
+                <p className={`text-2xl lg:text-3xl font-bold ${(() => {
                   const totalMarketValue = positions.reduce((sum, pos) => {
                     const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
                     return sum + (pos.quantity * currentPrice);
                   }, 0);
                   const profitLoss = totalMarketValue - summary.total_cost;
-                  return `${profitLoss >= 0 ? '+' : ''}$${profitLoss.toFixed(2)}`;
-                })()}
-              </p>
-              <p className={`text-sm ${(() => {
-                const totalMarketValue = positions.reduce((sum, pos) => {
-                  const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
-                  return sum + (pos.quantity * currentPrice);
-                }, 0);
-                const profitLoss = totalMarketValue - summary.total_cost;
-                return profitLoss >= 0 ? 'text-red-400' : 'text-green-400';
-              })()}`}>
-                {(() => {
+                  return profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+                })()}`}>
+                  {(() => {
+                    const totalMarketValue = positions.reduce((sum, pos) => {
+                      const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
+                      return sum + (pos.quantity * currentPrice);
+                    }, 0);
+                    const profitLoss = totalMarketValue - summary.total_cost;
+                    return `${profitLoss >= 0 ? '+' : ''}$${Math.abs(profitLoss).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                  })()}
+                </p>
+                <p className={`text-sm font-medium mt-1 ${(() => {
                   const totalMarketValue = positions.reduce((sum, pos) => {
                     const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
                     return sum + (pos.quantity * currentPrice);
                   }, 0);
                   const profitLoss = totalMarketValue - summary.total_cost;
-                  const profitLossPercent = summary.total_cost > 0 ? (profitLoss / summary.total_cost * 100) : 0;
-                  return `(${profitLoss >= 0 ? '+' : ''}${profitLossPercent.toFixed(2)}%)`;
-                })()}
-              </p>
+                  return profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+                })()}`}>
+                  {(() => {
+                    const totalMarketValue = positions.reduce((sum, pos) => {
+                      const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
+                      return sum + (pos.quantity * currentPrice);
+                    }, 0);
+                    const profitLoss = totalMarketValue - summary.total_cost;
+                    const profitLossPercent = summary.total_cost > 0 ? (profitLoss / summary.total_cost * 100) : 0;
+                    return `${profitLoss >= 0 ? '▲' : '▼'} ${Math.abs(profitLossPercent).toFixed(2)}%`;
+                  })()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* 持倉列表 */}
-      <div className="glass rounded-2xl p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-white">📈 持倉明細</h3>
-          <Button
+      <div className="glass rounded-2xl p-6 lg:p-8 border border-white/20">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+              <span>📈</span> 持倉明細
+            </h3>
+            <p className="text-sm text-gray-400 mt-1">共 {positions.length} 筆持倉記錄</p>
+          </div>
+          <button
             onClick={() => setShowAddModal(true)}
-            className="w-auto px-4 py-2"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium hover:shadow-lg hover:shadow-indigo-500/50 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 justify-center"
           >
-            + 新增持倉
-          </Button>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            新增持倉
+          </button>
         </div>
 
         {positions.length === 0 ? (
