@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apps.core.config import settings
-from apps.api.v1.routes import auth, users, stock, watchlist, alerts, positions, market, recommendations, news, websocket, transactions, line_webhook
+from apps.api.v1.routes import auth, users, stock, watchlist, alerts, positions, market, recommendations, news, websocket, transactions, line_webhook, screener
 
 app = FastAPI(
     title="AuraTrade API",
@@ -24,6 +24,7 @@ app.add_middleware(
 # Include Routers
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(screener.router, prefix="/api/v1")  # Stock Screener (必須在 stock.router 之前，避免路由衝突)
 app.include_router(stock.router, prefix="/api/v1")
 app.include_router(watchlist.router, prefix="/api/v1")
 app.include_router(alerts.router, prefix="/api/v1")

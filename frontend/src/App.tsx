@@ -5,6 +5,7 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { StockDetailPage } from './pages/stock/StockDetailPage'
+import { StockScreenerPage } from './pages/screener/StockScreenerPage'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -40,6 +41,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <StockDetailPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/screener"
+                    element={
+                        <ProtectedRoute>
+                            <StockScreenerPage />
                         </ProtectedRoute>
                     }
                 />

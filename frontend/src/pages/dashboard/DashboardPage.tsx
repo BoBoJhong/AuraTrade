@@ -4,13 +4,14 @@ import { WatchlistCard } from '../../components/stocks/WatchlistCard'
 import { PositionCard } from '../../components/stocks/PositionCard'
 import { RecommendedStocks } from '../../components/stocks/RecommendedStocks'
 import { NewsPanel } from '../../components/stocks/NewsPanel'
+import { AllNewsPage } from '../../components/stocks/AllNewsPage'
 import { useAuthStore } from '../../stores/authStore'
 import { NotificationBell } from '../../components/ui/NotificationBell'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
-type ViewMode = 'watchlist' | 'recommended' | 'positions';
+type ViewMode = 'watchlist' | 'recommended' | 'positions' | 'news';
 
 interface WatchlistItem {
     id: number
@@ -170,6 +171,32 @@ export const DashboardPage = () => {
                                     <span className="hidden sm:inline">持倉</span>
                                 </span>
                             </button>
+                            <button
+                                onClick={() => setViewMode('news')}
+                                className={`px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 ${
+                                    viewMode === 'news'
+                                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/50 scale-105'
+                                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                                }`}
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                    </svg>
+                                    <span className="hidden sm:inline">財經新聞</span>
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => navigate('/screener')}
+                                className="px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/50 hover:scale-105"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    <span className="hidden sm:inline">選股器</span>
+                                </span>
+                            </button>
                         </div>
 
                         {/* User Menu */}
@@ -239,6 +266,22 @@ export const DashboardPage = () => {
                         }`}
                     >
                         💼 持倉
+                    </button>
+                    <button
+                        onClick={() => setViewMode('news')}
+                        className={`flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                            viewMode === 'news'
+                                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+                                : 'text-gray-300 hover:text-white hover:bg-white/10'
+                        }`}
+                    >
+                        📰 財經新聞
+                    </button>
+                    <button
+                        onClick={() => navigate('/screener')}
+                        className="flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg"
+                    >
+                        🎯 選股器
                     </button>
                 </div>
 
@@ -343,6 +386,12 @@ export const DashboardPage = () => {
                             <div className="flex-1 h-px bg-gradient-to-r from-purple-500/50 to-transparent"></div>
                         </div>
                         <PositionCard />
+                    </div>
+                )}
+
+                {viewMode === 'news' && (
+                    <div className="mb-6 md:mb-8 animate-fadeIn">
+                        <AllNewsPage />
                     </div>
                 )}
             </main>

@@ -16,6 +16,50 @@
 **前端組件完成度**: 85% (主要功能已完成)
 **待整合功能**: WebSocket 實時推送、定時任務排程
 
+#### 🎯 AI 推薦整合新聞情緒分析 (NEW!)
+- **新聞情緒整合到AI推薦**:
+  - 修改 `/api/v1/stocks/ai-picks` 端點，整合新聞情緒評分
+  - **台股新聞**：使用 Google News RSS Feed 抓取中文新聞
+    - 關鍵字情緒判斷：正面關鍵字（增長、上漲、突破等）vs 負面關鍵字（下跌、虧損、警告等）
+    - 情緒標籤：偏正面 / 中性 / 偏負面
+    - 正面新聞加分 +10，負面新聞減分 -8
+  - **美股新聞**：優先使用 Alpha Vantage NEWS_SENTIMENT API
+    - 獲取新聞情緒分數 (-1.0 ~ 1.0)
+    - Bullish (>0.2) 加分 +15，Bearish (<-0.2) 減分 -10
+    - 失敗時回退到 Google News RSS
+  - **最新新聞顯示**：每支股票附帶最新2條相關新聞（標題、連結、來源）
+  - **AI評分優化**：綜合考慮價格動態、基本面分析、新聞情緒（滿分100分）
+
+- **技術修復**:
+  - 修復 Google News Service 的 302 重定向問題（加入 `follow_redirects=True`）
+  - 修復 Alpha Vantage async 調用錯誤（移除不必要的 `asyncio.to_thread`）
+  - 修復 import 語句缺少換行的語法錯誤
+
+- **API 回應範例**:
+  ```json
+  {
+    "symbol": "2454.TW",
+    "name": "聯發科",
+    "ai_score": 95,
+    "recommendation": "買入",
+    "news_sentiment": "偏正面",
+    "latest_news": [
+      {
+        "title": "聯發科 5G 晶片出貨創新高...",
+        "url": "https://news.google.com/...",
+        "source": "CMoney"
+      }
+    ]
+  }
+  ```
+
+- **修改檔案**:
+  - `backend/apps/api/v1/routes/screener.py` (新增新聞情緒邏輯)
+  - `backend/apps/core/services/google_news_service.py` (修復重定向)
+  - `backend/apps/core/services/alpha_vantage_service.py` (已支援 NEWS_SENTIMENT API)
+
+- **效果**: ✅ AI 推薦評分更準確，結合基本面與市場情緒，提供最新新聞參考
+
 #### 📰 新聞爬蟲系統與 AI 情緒分析
 - **Google News RSS 爬蟲**:
   - 實作 `GoogleNewsService` 使用 RSS Feed 抓取股票相關新聞

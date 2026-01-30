@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { stockService, StockData } from '@/services/stockService';
+import { stockService, StockData, TechnicalIndicators } from '@/services/stockService';
 import { getComprehensiveStockInfo, ComprehensiveStockInfo } from '@/services/marketService';
 import { positionService, Position } from '@/services/positionService';
 import { Button } from '@/components/ui/Button';
 import { NewsPanel } from '@/components/stocks/NewsPanel';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart 
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart, Area, AreaChart
 } from 'recharts';
+
+type IndicatorType = 'MA' | 'EMA' | 'MACD' | 'RSI' | 'KDJ' | 'BB';
 
 export const StockDetailPage = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -17,6 +19,8 @@ export const StockDetailPage = () => {
   const [stockData, setStockData] = useState<StockData | null>(null);
   const [marketInfo, setMarketInfo] = useState<ComprehensiveStockInfo | null>(null);
   const [userPosition, setUserPosition] = useState<Position | null>(null);
+  const [indicators, setIndicators] = useState<TechnicalIndicators | null>(null);
+  const [selectedIndicators, setSelectedIndicators] = useState<Set<IndicatorType>>(new Set(['MA', 'MACD', 'RSI']));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,15 +35,17 @@ export const StockDetailPage = () => {
     setError(null);
 
     try {
-      // 並行獲取股價數據、市場資訊和持倉資訊
-      const [priceData, info, positions] = await Promise.all([
+      // 並行獲取股價數據、市場資訊、持倉資訊和技術指標
+      const [priceData, info, positions, techIndicators] = await Promise.all([
         stockService.getStockData(symbol!, '1mo'),
         getComprehensiveStockInfo(symbol!).catch(() => null),
-        positionService.getPositions().catch(() => [])
+        positionService.getPositions().catch(() => []),
+        stockService.getTechnicalIndicators(symbol!, '1mo', '1d').catch(() => null)
       ]);
 
       setStockData(priceData);
       setMarketInfo(info);
+      setIndicators(techIndicators);
       
       // 查找該股票的持倉
       const position = positions.find(p => p.symbol === symbol);
@@ -50,6 +56,18 @@ export const StockDetailPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleIndicator = (indicator: IndicatorType) => {
+    setSelectedIndicators(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(indicator)) {
+        newSet.delete(indicator);
+      } else {
+        newSet.add(indicator);
+      }
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -265,6 +283,37 @@ export const StockDetailPage = () => {
 
         {/* 右側：圖表區 */}
         <div className="lg:col-span-2 space-y-6">
+          {/* 技術指標選擇器 */}
+          <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-lg rounded-2xl p-6 border border-white/30 shadow-xl">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <span className="text-2xl">🎛️</span>
+              技術指標選擇
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: 'MA' as IndicatorType, label: '移動平均線 (MA)', icon: '📊' },
+                { id: 'EMA' as IndicatorType, label: '指數移動平均 (EMA)', icon: '📈' },
+                { id: 'MACD' as IndicatorType, label: 'MACD', icon: '🔄' },
+                { id: 'RSI' as IndicatorType, label: 'RSI 相對強弱', icon: '💪' },
+                { id: 'KDJ' as IndicatorType, label: 'KDJ 隨機指標', icon: '🎯' },
+                { id: 'BB' as IndicatorType, label: '布林通道 (BB)', icon: '🌊' }
+              ].map(({ id, label, icon }) => (
+                <button
+                  key={id}
+                  onClick={() => toggleIndicator(id)}
+                  className={`px-4 py-2 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
+                    selectedIndicators.has(id)
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg scale-105'
+                      : 'bg-white/10 text-gray-300 hover:bg-white/20 border border-white/20'
+                  }`}
+                >
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* K線圖 */}
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center justify-between">
@@ -279,7 +328,7 @@ export const StockDetailPage = () => {
                 </span>
               )}
             </h2>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={400}>
               <ComposedChart data={sortedPrices}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                 <XAxis 
@@ -316,9 +365,54 @@ export const StockDetailPage = () => {
                     }}
                   />
                 )}
+                {/* 布林通道 */}
+                {selectedIndicators.has('BB') && indicators?.ma && (
+                  <>
+                    <Area 
+                      type="monotone" 
+                      dataKey={(entry: any) => {
+                        const idx = sortedPrices.indexOf(entry);
+                        const ma20 = indicators.ma.ma20[idx];
+                        if (!ma20) return null;
+                        // 計算標準差作為布林帶寬
+                        const std = Math.sqrt(sortedPrices.slice(Math.max(0, idx-19), idx+1)
+                          .reduce((sum, p) => sum + Math.pow(p.close - ma20, 2), 0) / 20);
+                        return ma20 + 2 * std;
+                      }}
+                      stroke="#fbbf24" 
+                      fill="#fbbf24" 
+                      fillOpacity={0.1}
+                      name="布林上軌"
+                      strokeWidth={1}
+                      dot={false}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey={(entry: any) => {
+                        const idx = sortedPrices.indexOf(entry);
+                        const ma20 = indicators.ma.ma20[idx];
+                        if (!ma20) return null;
+                        const std = Math.sqrt(sortedPrices.slice(Math.max(0, idx-19), idx+1)
+                          .reduce((sum, p) => sum + Math.pow(p.close - ma20, 2), 0) / 20);
+                        return ma20 - 2 * std;
+                      }}
+                      stroke="#fbbf24" 
+                      fill="#fbbf24" 
+                      fillOpacity={0.1}
+                      name="布林下軌"
+                      strokeWidth={1}
+                      dot={false}
+                    />
+                  </>
+                )}
                 <Line type="monotone" dataKey="close" stroke="#ef4444" name="收盤價" strokeWidth={3} dot={false} />
-                <Line type="monotone" dataKey="ma5" stroke="#fbbf24" name="MA5" strokeWidth={2} dot={false} strokeDasharray="5 5" />
-                <Line type="monotone" dataKey="ma20" stroke="#a78bfa" name="MA20" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                {selectedIndicators.has('MA') && (
+                  <>
+                    <Line type="monotone" dataKey="ma5" stroke="#fbbf24" name="MA5" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="ma20" stroke="#a78bfa" name="MA20" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="ma60" stroke="#10b981" name="MA60" strokeWidth={2} dot={false} strokeDasharray="3 3" />
+                  </>
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -355,13 +449,16 @@ export const StockDetailPage = () => {
           </div>
 
           {/* MACD */}
-          {sortedPrices[0]?.macd !== undefined && (
+          {selectedIndicators.has('MACD') && sortedPrices[0]?.macd !== undefined && (
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
               <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <span className="text-2xl">📊</span>
+                <span className="text-2xl">🔄</span>
                 MACD 指標
+                <span className="text-sm font-normal text-gray-400">
+                  (快慢線交叉判斷趨勢)
+                </span>
               </h2>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={250}>
                 <ComposedChart data={sortedPrices}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                   <XAxis 
@@ -392,13 +489,16 @@ export const StockDetailPage = () => {
           )}
 
           {/* RSI */}
-          {sortedPrices[0]?.rsi !== undefined && (
+          {selectedIndicators.has('RSI') && sortedPrices[0]?.rsi !== undefined && (
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
               <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <span className="text-2xl">🎯</span>
-                RSI 指標
+                <span className="text-2xl">💪</span>
+                RSI 相對強弱指標
+                <span className="text-sm font-normal text-gray-400">
+                  (超買 &gt;70, 超賣 &lt;30)
+                </span>
               </h2>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={sortedPrices}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                   <XAxis 
@@ -420,9 +520,59 @@ export const StockDetailPage = () => {
                     }}
                   />
                   <Legend />
-                  <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 3" label="超買" />
-                  <ReferenceLine y={30} stroke="#10b981" strokeDasharray="3 3" label="超賣" />
-                  <Line type="monotone" dataKey="rsi" stroke="#a78bfa" name="RSI" strokeWidth={2} dot={false} />
+                  <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 3" label={{ value: "超買", fill: "#ef4444", position: "right" }} />
+                  <ReferenceLine y={50} stroke="#ffffff40" strokeDasharray="1 1" />
+                  <ReferenceLine y={30} stroke="#10b981" strokeDasharray="3 3" label={{ value: "超賣", fill: "#10b981", position: "right" }} />
+                  <Line type="monotone" dataKey="rsi" stroke="#a78bfa" name="RSI" strokeWidth={3} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* KDJ */}
+          {selectedIndicators.has('KDJ') && indicators?.kdj && (
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <span className="text-2xl">🎯</span>
+                KDJ 隨機指標
+                <span className="text-sm font-normal text-gray-400">
+                  (K線與D線交叉判斷買賣點)
+                </span>
+              </h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart 
+                  data={sortedPrices.map((price, idx) => ({
+                    ...price,
+                    k: indicators.kdj.k[idx],
+                    d: indicators.kdj.d[idx],
+                    j: indicators.kdj.j[idx]
+                  }))}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#ffffff80"
+                    tick={{ fill: '#ffffff80' }}
+                  />
+                  <YAxis 
+                    domain={[0, 100]}
+                    stroke="#ffffff80"
+                    tick={{ fill: '#ffffff80' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(0,0,0,0.8)', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      color: '#fff'
+                    }}
+                  />
+                  <Legend />
+                  <ReferenceLine y={80} stroke="#ef4444" strokeDasharray="3 3" label={{ value: "超買", fill: "#ef4444" }} />
+                  <ReferenceLine y={20} stroke="#10b981" strokeDasharray="3 3" label={{ value: "超賣", fill: "#10b981" }} />
+                  <Line type="monotone" dataKey="k" stroke="#fbbf24" name="K值" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="d" stroke="#a78bfa" name="D值" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="j" stroke="#ef4444" name="J值" strokeWidth={2} dot={false} strokeDasharray="3 3" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
