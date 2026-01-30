@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # External APIs
     GEMINI_API_KEY: str = ""
     LINE_CHANNEL_ACCESS_TOKEN: str = ""
+    LINE_CHANNEL_SECRET: str = ""  # LINE Bot Webhook 簽名驗證用
     YAHOO_FINANCE_API_KEY: str = ""
     FUGLE_API_KEY: str = ""  # Fugle MarketData API Key for Taiwan stocks
     ALPHA_VANTAGE_API_KEY: str = ""  # Alpha Vantage API Key for US stocks & technical indicators

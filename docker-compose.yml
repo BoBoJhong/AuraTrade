@@ -44,7 +44,10 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=True
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - LINE_NOTIFY_TOKEN=${LINE_NOTIFY_TOKEN}
+      - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN}
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
+      - FUGLE_API_KEY=${FUGLE_API_KEY}
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
     volumes:
       - ./backend:/app
     depends_on:

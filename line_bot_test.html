@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LINE Bot 測試工具</title>
+    <style>
+        body { font-family: Arial; background: #667eea; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; }
+        h1 { color: #333; }
+        .section { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 2px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #5568d3; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; display: none; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 LINE Bot 測試工具</h1>
+        
+        <div class="section">
+            <h3>🔍 查詢綁定狀態</h3>
+            <input type="email" id="statusEmail" placeholder="Email">
+            <button onclick="checkStatus()">查詢</button>
+            <div id="statusResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔗 綁定 LINE 帳號</h3>
+            <input type="email" id="bindEmail" placeholder="Email">
+            <input type="text" id="bindUserId" placeholder="LINE User ID">
+            <button onclick="bindUser()">綁定</button>
+            <div id="bindResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>📱 測試推播通知</h3>
+            <input type="text" id="testUserId" placeholder="LINE User ID">
+            <button onclick="testNotification()">發送測試</button>
+            <div id="testResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        function showResult(id, msg, success) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = 'result ' + (success ? 'success' : 'error');
+            el.style.display = 'block';
+        }
+
+        async function checkStatus() {
+            const email = document.getElementById('statusEmail').value;
+            try {
+                const res = await fetch(API_BASE + '/line/user-status?email=' + encodeURIComponent(email));
+                const data = await res.json();
+                showResult('statusResult', data.is_bound ? '✅ 已綁定: ' + data.line_user_id : '❌ 未綁定', data.is_bound);
+            } catch (e) {
+                showResult('statusResult', '錯誤: ' + e.message, false);
+            }
+        }
+
+        async function bindUser() {
+            const email = document.getElementById('bindEmail').value;
+            const userId = document.getElementById('bindUserId').value;
+            try {
+                const res = await fetch(API_BASE + '/line/bind-user?email=' + encodeURIComponent(email) + '&line_user_id=' + encodeURIComponent(userId), { method: 'POST' });
+                const data = await res.json();
+                showResult('bindResult', res.ok ? '✅ 綁定成功' : '❌ ' + data.detail, res.ok);
+            } catch (e) {
+                showResult('bindResult', '錯誤: ' + e.message, false);
+            }
+        }
+
+        async function testNotification() {
+            const userId = document.getElementById('testUserId').value;
+            try {
+                const res = await fetch(API_BASE + '/line/test-notification?line_user_id=' + encodeURIComponent(userId));
+                const data = await res.json();
+                showResult('testResult', res.ok ? '✅ 已發送' : '❌ ' + data.detail, res.ok);
+            } catch (e) {
+                showResult('testResult', '錯誤: ' + e.message, false);
+            }
+        }
+    </script>
+</body>
+</html>

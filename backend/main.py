@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apps.core.config import settings
-from apps.api.v1.routes import auth, users, stock, watchlist, alerts, positions, market, recommendations, news, websocket, transactions
+from apps.api.v1.routes import auth, users, stock, watchlist, alerts, positions, market, recommendations, news, websocket, transactions, line_webhook
 
 app = FastAPI(
     title="AuraTrade API",
@@ -33,6 +33,7 @@ app.include_router(recommendations.router, prefix="/api/v1")
 app.include_router(news.router, prefix="/api/v1")
 app.include_router(websocket.router, prefix="/api/v1")
 app.include_router(transactions.router, prefix="/api/v1")
+app.include_router(line_webhook.router, prefix="/api/v1")  # LINE Bot Webhook
 
 # Startup Event - Initialize Database
 @app.on_event("startup")

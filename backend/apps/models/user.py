@@ -66,6 +66,19 @@ class User(Base):
         nullable=False,
         comment="用戶角色 (user/admin)"
     )
+    line_user_id = Column(
+        String(255),
+        unique=True,
+        nullable=True,
+        index=True,
+        comment="LINE Bot 用戶 ID（用於推播通知）"
+    )
+    line_notify_enabled = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="是否啟用 LINE 通知"
+    )
     
     def __repr__(self):
         return f"<User(user_id={self.user_id}, email={self.email})>"
