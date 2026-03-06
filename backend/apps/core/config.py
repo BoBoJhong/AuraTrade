@@ -2,7 +2,7 @@
 Core Configuration
 追溯: REQ-092, REQ-093
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 import os
 
@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # CORS - 注意: .env 中不要設置空值
+    # CORS_ORIGINS 欄位已移除，直接在 main.py 中設置
     
     # External APIs
     GEMINI_API_KEY: str = ""
@@ -47,9 +47,11 @@ class Settings(BaseSettings):
     MAX_WATCHLIST_SIZE: int = 50  # BR-01
     STOCK_UPDATE_INTERVAL_SECONDS: int = 2  # BR-02
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"
+    )
 
 
 settings = Settings()

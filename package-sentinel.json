@@ -1,0 +1,33 @@
+{
+  "name": "sentinel-agent",
+  "version": "1.0.0",
+  "description": "Sentinel Test Architect - Universal Testing Agent",
+  "main": "sentinel-cli.py",
+  "scripts": {
+    "sentinel:init": "python sentinel-cli.py init",
+    "sentinel:scan": "python sentinel-cli.py scan",
+    "sentinel:full-cycle": "python sentinel-cli.py full-cycle",
+    "sentinel:test": "python sentinel-cli.py run-tests",
+    "sentinel:report": "python sentinel-cli.py report"
+  },
+  "bin": {
+    "sentinel": "./sentinel-cli.py"
+  },
+  "keywords": [
+    "testing",
+    "test-automation",
+    "quality-assurance",
+    "sentinel",
+    "test-architect"
+  ],
+  "author": "Sentinel Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/sentinel-agent"
+  },
+  "dependencies": {
+    "pyyaml": "^6.0"
+  },
+  "pythonVersion": ">=3.8"
+}

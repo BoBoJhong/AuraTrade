@@ -77,7 +77,8 @@ export const StockScreenerPage = () => {
           console.log('Trending loaded:', response.stocks.length, 'stocks');
         }
       } else if (viewMode === 'ai-picks') {
-        const response = await screenerService.getAIPicks(15);
+        // 優化: 減少候選數避免 timeout (10 支股票，每批3支，約20秒)
+        const response = await screenerService.getAIPicks(10, undefined, 10);
         if (!controller?.signal.aborted) {
           setAIPicks(response.stocks);
           console.log('AI picks loaded:', response.stocks.length, 'stocks');

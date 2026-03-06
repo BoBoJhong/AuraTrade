@@ -1,0 +1,201 @@
+# Sentinel Test Architect Configuration
+# Auto-generated: 2026-02-06
+# Project: AuraTrade - AI 驅動的智能投資分析系統
+
+# === 專案資訊 ===
+project:
+  name: "AuraTrade"
+  type: "fullstack"
+  root: "c:\\Users\\coolc\\AuraTrade"
+  version: "1.0.0"
+  description: "AI 驅動的智能投資分析系統"
+
+# === 技術棧配置 ===
+tech_stack:
+  backend:
+    language: "Python"
+    version: "3.x"
+    framework: "FastAPI"
+    framework_version: "0.109.0"
+    test_framework: "Pytest"
+    test_framework_version: "7.4.4"
+    code_quality:
+      - "black"
+      - "flake8"
+      - "mypy"
+    
+  frontend:
+    language: "TypeScript"
+    version: "5.2.2"
+    framework: "React"
+    framework_version: "18.2.0"
+    build_tool: "Vite"
+    build_tool_version: "5.0.8"
+    test_framework: "Vitest"
+    test_framework_version: "未安裝"  # ⚠️ 執行 ./scripts/setup-frontend-testing.ps1 安裝
+    e2e_framework: "Playwright"
+    e2e_framework_version: "未安裝"  # 待安裝
+  
+  database:
+    - type: "PostgreSQL"
+      version: "15"
+      test_db: "auratrade_test"
+    - type: "Redis"
+      version: "7"
+
+# === 測試策略 ===
+test_strategy:
+  pyramid_ratio:
+    unit: 60
+    integration: 30
+    e2e: 10
+  
+  coverage_targets:
+    overall: 70
+    critical_modules: 90
+    high_priority: 75
+    medium_priority: 60
+  
+  test_environments:
+    - "local"
+    - "ci"
+    - "staging"
+
+# === 優先測試模組 ===
+priority_modules:
+  critical:
+    - name: "GeminiService"
+      path: "backend/apps/services/gemini_service.py"
+      reason: "AI 分析核心 (Gemini API)"
+      target_coverage: 95
+    
+    - name: "AuthService"
+      path: "backend/apps/api/routes/auth.py"
+      reason: "認證安全核心 (JWT)"
+      target_coverage: 90
+  
+  high:
+    - name: "YahooFinanceService"
+      path: "backend/apps/services/yahoo_finance.py"
+      reason: "股價數據主要來源"
+      target_coverage: 85
+    
+    - name: "GoogleNewsService"
+      path: "backend/apps/services/google_news_service.py"
+      reason: "新聞爬蟲與情緒分析"
+      target_coverage: 80
+    
+    - name: "StocksAPI"
+      path: "backend/apps/api/routes/stocks.py"
+      reason: "核心股票查詢 API"
+      target_coverage: 85
+  
+  medium:
+    - name: "LineBotService"
+      path: "backend/apps/services/line_service.py"
+      reason: "LINE 通知服務"
+      target_coverage: 70
+    
+    - name: "FugleService"
+      path: "backend/apps/services/fugle_service.py"
+      reason: "台股即時行情"
+      target_coverage: 70
+  
+  frontend_priority:
+    - name: "StockChart"
+      path: "frontend/src/components/stocks/StockChart.tsx"
+      reason: "股票圖表核心元件"
+      target_coverage: 80
+    
+    - name: "useStockWebSocket"
+      path: "frontend/src/hooks/useStockWebSocket.ts"
+      reason: "WebSocket 即時連接"
+      target_coverage: 85
+
+# === 測試目錄結構 ===
+test_directories:
+  root: "tests"
+  unit: "tests/unit"                 # ✅ 已存在
+  integration: "tests/integration"   # ✅ 已存在
+  e2e: "tests/e2e"                   # 🆕 Sentinel 創建
+  performance: "tests/performance"   # 🆕 Sentinel 創建 (性能測試)
+  mocks: "tests/mocks"
+  fixtures: "tests/e2e/fixtures"
+  reports: "tests/reports"
+  preserve_existing: true             # ⚠️ 保留現有測試結構
+  
+report_directories:
+  test_plans: "tests/reports/test-plans"
+  test_reports: "tests/reports/test-reports"
+  risk_maps: "tests/reports/risk-maps"
+  quality_reports: "tests/reports/quality-reports"
+
+# === 測試命名規範 ===
+naming_conventions:
+  unit_test_file: "test_{module_name}.py"
+  integration_test_file: "test_{feature}_{integration}.py"
+  e2e_test_file: "{user_flow}.spec.ts"
+  test_case_prefix: "TC"
+  test_id_format: "{type}-{module}-{seq:03d}"
+
+# === 測試執行配置 ===
+execution:
+  parallel: true
+  max_workers: 4
+  timeout_unit: 30  # 秒
+  timeout_integration: 60  # 秒
+  timeout_e2e: 120  # 秒
+  retry_flaky: 2
+  fail_fast: false
+
+# === 風險識別配置 ===
+risk_detection:
+  complexity_threshold: 10
+  coverage_threshold: 50
+  risk_keywords:
+    - "payment"
+    - "auth"
+    - "security"
+    - "crypto"
+    - "price"
+    - "transaction"
+
+# === CI/CD 整合 ===
+ci_cd:
+  enabled: true                     # ✅ 啟用 CI
+  platform: "github-actions"         # ✅ 已有 .github/workflows/ci.yml
+  run_on_pr: true
+  run_on_push: true
+  quality_gates:
+    min_coverage: 70
+    max_complexity: 10               # 與開發規範一致
+    block_on_failure: true
+  
+  workflows:
+    - ".github/workflows/ci.yml"      # 已存在
+    - ".github/workflows/cd.yml"      # 已存在
+    - ".github/workflows/code-quality.yml"  # 已存在
+
+# === 排除規則 ===
+exclude_patterns:
+  - "*/node_modules/*"
+  - "*/__pycache__/*"
+  - "*/venv/*"
+  - "*/dist/*"
+  - "*/build/*"
+  - "*/.git/*"
+  - "*/migrations/*"
+  - "*/alembic/versions/*"
+
+# === Sentinel 記憶體路徑 ===
+sentinel:
+  sidecar_path: "_bmad/_memory/sentinel-sidecar"
+  memories: "_bmad/_memory/sentinel-sidecar/memories.md"
+  change_tracker: "_bmad/_memory/sentinel-sidecar/change-tracker.yaml"
+  
+# === 執行歷史 ===
+execution_history:
+  last_init: "2026-02-06"
+  last_full_scan: null
+  last_test_run: null
+  initialized_by: "Sentinel v1.0.0"

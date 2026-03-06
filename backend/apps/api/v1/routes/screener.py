@@ -12,6 +12,7 @@ from apps.core.services.technical_indicators import TechnicalIndicatorService
 from apps.core.services.stock_list_manager import stock_list_manager
 from apps.core.services.google_news_service import GoogleNewsService
 from apps.core.services.alpha_vantage_service import alpha_vantage_service
+from apps.core.services.ai_recommendation_engine import EnhancedAIRecommendationEngine
 import logging
 import asyncio
 
@@ -235,6 +236,50 @@ async def get_trending_stocks(
 
 
 @router.get("/stocks/ai-picks")
+async def get_ai_stock_picks(
+    market: Optional[str] = Query(None, description="市場篩選: 'TW' 或 'US'"),
+    limit: int = Query(10, le=50, description="返回數量"),
+    min_score: float = Query(60.0, description="最低評分門檻"),
+    max_candidates: int = Query(20, le=50, description="最大候選數量（控制速度）"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    AI 智能推薦股票 (增強版)
+    
+    使用進階技術指標、深度基本面分析、新聞情緒評分
+    - 動態候選池：可調整掃描數量（預設20支，提升速度）
+    - 技術指標：RSI、MACD、布林通道、KD指標、均線系統、量比
+    - 基本面：PE、PB、殖利率、ROE、負債比、EPS成長率、毛利率
+    - 情緒分析：Alpha Vantage + Google News
+    - 信心度評分：基於數據完整性和分數一致性
+    - 效能優化：分批處理避免 timeout (預設20支約10-15秒)
+    """
+    try:
+        recommendations = await EnhancedAIRecommendationEngine.generate_recommendations(
+            db=db,
+            market=market,
+            limit=limit,
+            min_score=min_score,
+            max_candidates=max_candidates
+        )
+        
+        # 獲取統計數據
+        stats = await EnhancedAIRecommendationEngine.get_recommendation_statistics(db, days=30)
+        
+        return {
+            "total": len(recommendations),
+            "stocks": recommendations,
+            "statistics": stats,
+            "note": "AI評分基於技術面(45%)、基本面(35%)、情緒面(20%)綜合分析"
+        }
+        
+    except Exception as e:
+        logger.error(f"AI picks error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI推薦服務暫時不可用: {str(e)}")
+
+
+# 保留舊版 API 作為備援（標記為 deprecated）
+@router.get("/stocks/ai-picks-legacy")
 async def get_ai_stock_picks(
     limit: int = Query(10, le=50, description="返回數量"),
     db: AsyncSession = Depends(get_db)

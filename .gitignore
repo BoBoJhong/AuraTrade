@@ -77,3 +77,17 @@ htmlcov/
 # Logs
 logs/
 *.log
+
+# === Sentinel Test Architect ===
+# 測試快取與臨時檔案
+.sentinel-cache/
+tests/reports/.coverage
+tests/reports/htmlcov/
+tests/.pytest_cache/
+tests/e2e/screenshots/*.png
+tests/e2e/videos/*.webm
+playwright-report/
+test-results/
+
+# 保留配置檔案（追蹤版本）
+# .sentinel-config.yaml 應該被追蹤

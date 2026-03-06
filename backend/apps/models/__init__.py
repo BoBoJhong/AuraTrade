@@ -4,5 +4,6 @@ from apps.models.stock import Stock, Watchlist
 from apps.models.historical_price import HistoricalPrice
 from apps.models.price_alert import PriceAlert
 from apps.models.position import Position
+from apps.models.ai_recommendation import AIRecommendation
 
-__all__ = ["User", "Stock", "Watchlist", "HistoricalPrice", "PriceAlert", "Position"]
+__all__ = ["User", "Stock", "Watchlist", "HistoricalPrice", "PriceAlert", "Position", "AIRecommendation"]

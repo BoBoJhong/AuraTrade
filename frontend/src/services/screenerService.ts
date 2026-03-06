@@ -67,10 +67,15 @@ export const screenerService = {
     return response.data;
   },
 
-  // AI 推薦股票
-  getAIPicks: async (limit: number = 10): Promise<AIPicksResponse> => {
+  // AI 推薦股票（優化：減少候選數避免 timeout）
+  getAIPicks: async (limit: number = 10, market?: string, maxCandidates: number = 10): Promise<AIPicksResponse> => {
     const response = await api.get<AIPicksResponse>('/stocks/ai-picks', {
-      params: { limit }
+      params: { 
+        limit,
+        market,
+        max_candidates: maxCandidates,  // 控制掃描數量，預設10支避免timeout
+        min_score: 50  // 降低評分門檻確保有結果
+      }
     });
     return response.data;
   }

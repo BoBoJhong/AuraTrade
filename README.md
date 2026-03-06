@@ -190,6 +190,63 @@ curl http://localhost:8000/health  # 健康檢查
 curl http://localhost:8000/api/v1/stocks/2330.TW  # 台積電股價
 ```
 
+## 🧪 測試 (使用 Sentinel Agent)
+
+### 方法 1: VS Code + Copilot (AI 自動生成測試)
+```
+在 Copilot Chat 中輸入:
+  "啟動 Sentinel Agent"
+  "FC"  # Full Cycle 完整測試
+  "生成 AuthService 的單元測試"
+```
+
+### 方法 2: 命令行 CLI (任何 IDE 都能用)
+```bash
+# 初始化 Sentinel (首次使用)
+python sentinel-cli.py init
+
+# 完整測試週期
+python sentinel-cli.py full-cycle
+
+# 掃描專案
+python sentinel-cli.py scan
+
+# 執行測試
+python sentinel-cli.py run-tests --type unit
+```
+
+### 方法 3: Make 命令 (團隊標準化)
+```bash
+# 顯示所有命令
+make help
+
+# Sentinel 完整測試
+make sentinel-full
+# 或簡寫
+make st
+
+# 其他測試命令
+make test          # 所有測試
+make test-unit     # 單元測試
+make test-perf     # 性能測試
+make test-coverage # 覆蓋率報告
+```
+
+### 傳統測試命令
+```bash
+# 後端測試
+cd backend && pytest
+
+# 前端測試
+cd frontend && npm test
+```
+
+**詳細文檔:**
+- [Sentinel Agent 使用指南](_bmad/_memory/sentinel-sidecar/README.md)
+- [IDE 整合指南](_bmad/_memory/sentinel-sidecar/IDE_INTEGRATION.md)
+- [一鍵測試指南](_bmad/_memory/sentinel-sidecar/ONE_COMMAND_GUIDE.md)
+- [跨平台檢查報告](_bmad/_memory/sentinel-sidecar/CROSS_PLATFORM_CHECK.md)
+
 ## 🔧 環境變數設定
 
 複製 `backend/.env.example` 為 `backend/.env` 並設定以下變數：

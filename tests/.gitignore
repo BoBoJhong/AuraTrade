@@ -1,0 +1,25 @@
+# 測試覆蓋率報告 (自動生成)
+coverage/
+lcov-report/
+*.lcov
+.nyc_output/
+*.coverage
+
+# E2E 測試產物 (自動生成)
+screenshots/
+videos/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# 測試報告封存 (超過30天)
+archives/
+
+# Node modules (如果測試有獨立依賴)
+node_modules/
+
+# 臨時檔案
+*.tmp
+*.log
+.DS_Store
+Thumbs.db

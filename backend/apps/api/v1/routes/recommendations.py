@@ -9,12 +9,14 @@ from apps.models.user import User
 from apps.core.services.yahoo_finance import YahooFinanceService
 from apps.core.services.alpha_vantage_service import alpha_vantage_service, ALPHA_VANTAGE_AVAILABLE
 from apps.core.services.twse_service import TWSEService
+from apps.core.services.ai_recommendation_engine import EnhancedAIRecommendationEngine
 import logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# 保留舊版 RecommendationEngine 供其他地方使用
 class RecommendationEngine:
     """AI 股票推薦引擎"""
     
@@ -277,27 +279,82 @@ class RecommendationEngine:
 async def get_recommendations(
     market: Optional[str] = Query(None, description="Market filter: 'TW' or 'US'"),
     limit: int = Query(10, ge=1, le=50, description="Number of recommendations"),
-    current_user: User = Depends(get_current_user)
+    min_score: float = Query(60.0, description="最低評分門檻"),
+    max_candidates: int = Query(20, le=50, description="最大候選數量"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    獲取 AI 推薦股票
+    獲取 AI 推薦股票 (增強版)
+    
+    使用進階 AI 引擎，整合多維度分析：
+    - 技術面 45%: RSI、MACD、布林通道、KD、均線、量比
+    - 基本面 35%: PE、PB、殖利率、ROE、負債比、EPS成長、毛利率
+    - 情緒面 20%: 新聞情緒分析
+    - 信心度評分: 基於數據完整性和分數一致性
+    - 效能優化: 分批處理，預設20支約10-15秒
     
     - **market**: 市場篩選 ('TW' 或 'US')
     - **limit**: 返回數量 (1-50)
+    - **min_score**: 最低評分門檻 (0-100)
+    - **max_candidates**: 最大候選數量（控制速度，預設20）
     
     Returns:
         [
             {
                 "symbol": "2330.TW",
-                "name": "台積電",
+                "stock_name": "台積電",
                 "price": 620.0,
                 "change_percent": 1.5,
-                "score": 8.5,
-                "reasons": ["RSI 超賣", "低本益比"],
+                "ai_score": 85.5,
+                "confidence": 92.0,
+                "recommendation": "買入",
+                "reasons": ["RSI超賣", "布林下軌", "高ROE", ...],
+                "technical_score": 88.0,
+                "fundamental_score": 85.0,
+                "sentiment_score": 82.0,
+                "news_sentiment": "正面",
+                "latest_news": [...],
                 "market": "TW"
             },
             ...
         ]
+    """
+    try:
+        recommendations = await EnhancedAIRecommendationEngine.generate_recommendations(
+            db=db,
+            market=market,
+            limit=limit,
+            min_score=min_score,
+            max_candidates=max_candidates
+        )
+        
+        # 獲取統計數據
+        stats = await EnhancedAIRecommendationEngine.get_recommendation_statistics(db, days=30)
+        
+        return {
+            "total": len(recommendations),
+            "recommendations": recommendations,
+            "statistics": stats,
+            "note": "使用增強版AI引擎，評分更精確、理由更詳細"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting recommendations: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI推薦服務暫時不可用: {str(e)}")
+
+
+# 舊版 API (兼容性保留)
+@router.get("/recommendations/legacy")
+async def get_recommendations_legacy(
+    market: Optional[str] = Query(None, description="Market filter: 'TW' or 'US'"),
+    limit: int = Query(10, ge=1, le=50, description="Number of recommendations"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    獲取 AI 推薦股票 (舊版)
+    
+    **已棄用**: 請使用 /recommendations 端點（增強版）
     """
     try:
         # 建立候選股票池

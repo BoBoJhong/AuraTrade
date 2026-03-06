@@ -1,0 +1,209 @@
+---
+# Sentinel Change Tracker
+# 此檔案自動維護，追蹤檔案變更與測試結果
+
+version: "1.0.0"
+project: "AuraTrade"
+
+last_scan:
+  timestamp: "2026-02-06T18:30:00+08:00"
+  scan_type: "full_check"
+  commit_hash: null  # Git hash will be tracked after first commit
+  test_mode: "full"
+  branch: null
+  files_scanned: 78  # 54 backend + 24 frontend
+  tests_found: 1  # test_health.py (test_search.py has issues)
+  tests_run: 1
+  tests_passed: 1
+  tests_failed: 0
+  execution_time: 15.17
+  coverage: 26.28
+  risk_report: "tests/reports/test-reports/TR-FC-20260206-020020.md"
+
+# 檔案 Checksum 快取 (初始化後開始追蹤)
+file_checksums:
+  # Critical 模組 (初始狀態記錄)
+  "backend/apps/core/security.py":
+    last_hash: null  # 首次執行後填入
+    last_modified: null
+    last_test: null
+    last_result: "UNTESTED"
+    test_count: 0
+    coverage: 0.0
+    risk_level: "🔴 Critical"
+  
+  "backend/apps/core/services/technical_indicators.py":
+    last_hash: null
+    last_modified: null
+    last_test: null
+    last_result: "UNTESTED"
+    test_count: 0
+    coverage: 0.0
+    risk_level: "🔴 Critical"
+  
+  "backend/apps/services/auth_service.py":
+    last_hash: null
+    last_modified: null
+    last_test: null
+    last_result: "UNTESTED"
+    test_count: 0
+    coverage: 0.0
+    risk_level: "🔴 Critical"
+  
+  "backend/apps/core/services/yahoo_finance.py":
+    last_hash: null
+    last_modified: null
+    last_test: null
+    last_result: "UNTESTED"
+    test_count: 0
+    coverage: 0.0
+    risk_level: "🔴 Critical"
+
+# 依賴關係圖 (增量建立)
+dependency_graph: {}
+  # 將在首次 full scan 時自動分析
+  # 範例:
+  # "backend/apps/services/auth_service.py":
+  #   imports:
+  #     - "apps.core.security"
+  #     - "apps.repositories.user_repository"
+  #   used_by:
+  #     - "apps/api/v1/routes/auth.py"
+  #   complexity: 15
+
+# 變更歷史 (最近 50 次)
+change_history:
+  - timestamp: "2026-02-06T18:30:00+08:00"
+    event_type: "initialization"
+    description: "Sentinel 專案初始化完成"
+    actions:
+      - "生成 .sentinel-config.yaml"
+      - "建立測試目錄結構"
+      - "生成 pytest.ini, vitest.config.ts, playwright.config.ts"
+      - "產出初始風險地圖 RM-INIT-001.md"
+      - "初始化記憶系統"
+    metrics:
+      files_scanned: 78
+      critical_risks: 4
+      high_risks: 4
+      medium_risks: 4
+      test_coverage: "~3%"
+  
+  - timestamp: "2026-02-06T18:30:00+08:00"
+    event_type: "full_check"
+    description: "FC-001: 首次完整測試與覆蓋率基準建立"
+    commit_hash: null
+    files_changed: 1
+    files_list:
+      - "tests/test_health.py"
+    tests_run: 1
+    tests_passed: 1
+    tests_failed: 0
+    duration: 15.17
+    result: "PASSED"
+    coverage: 26.28
+    coverage_change: "+23.28%"
+    test_report_id: "TR-FC-20260206-020020"
+    fixes_applied:
+      - "修正 test_health.py UTF-8 編碼問題"
+      - "更新 httpx AsyncClient API (使用 ASGITransport)"
+      - "安裝缺少的依賴: pytest, pytest-cov, pytest-asyncio, feedparser"
+    critical_findings:
+      - "security.py: 26% - JWT/密碼處理未測試"
+      - "technical_indicators.py: 27% - 財務計算未驗證"
+      - "auth_service.py: 25% - 認證邏輯未測試"
+      - "yahoo_finance.py: 11% - API 錯誤處理未測試"
+
+# 測試快取 (避免重複執行)
+test_cache: {}
+  # 格式:
+  # "tests/unit/test_security.py::test_hash_password":
+  #   last_run: "2026-02-06T18:30:00+08:00"
+  #   result: "PASSED"
+  #   duration: 0.023
+  #   hash: "abc123"  # 測試內容 hash
+  #   dependencies:  # 相關源碼檔案
+  #     - "backend/apps/core/security.py"
+
+# 失敗測試追蹤 (Flaky tests detection)
+failing_tests: []
+  # 格式:
+  # - test_id: "test_api_timeout"
+  #   file: "tests/integration/test_yahoo_api.py"
+  #   failure_count: 3
+  #   first_failed: "2026-02-06T10:00:00"
+  #   last_failed: "2026-02-06T15:30:00"
+  #   is_flaky: true
+  #   error_pattern: "Timeout"
+
+# 統計資訊
+statistics:
+  total_test_runs: 1
+  total_tests_generated: 0
+  total_tests_executed: 1
+  total_passed: 1
+  total_failed: 0
+  average_test_duration: 15.17
+  best_coverage: 26.28
+  worst_coverage: 26.28
+  current_coverage: 26.28
+  incremental_speedup: {}  # 記錄增量測試加速比
+
+---
+# 初始化完成標記
+initialized: true
+initialized_at: "2026-02-06T18:30:00+08:00"
+initialized_by: "Sentinel Test Architect v1.0.0"
+config_file: ".sentinel-config.yaml"
+test_cache: {}
+  # 範例:
+  # "tests/unit/payment.test.ts":
+  #   last_run: "2026-02-06T15:30:00+08:00"
+  #   last_result: "PASSED"
+  #   test_cases:
+  #     - name: "should_process_payment"
+  #       result: "PASSED"
+  #       duration: 0.8
+  #     - name: "should_reject_invalid_amount"
+  #       result: "PASSED"
+  #       duration: 0.3
+  #   total_duration: 3.2
+  #   coverage: 95.0
+
+# 失敗追蹤 (持續失敗的測試)
+flaky_tests: []
+  # 範例:
+  # - test_file: "tests/e2e/checkout.test.ts"
+  #   test_name: "should_complete_checkout"
+  #   failure_count: 3
+  #   last_failures:
+  #     - "2026-02-05T14:20:00"
+  #     - "2026-02-05T16:45:00"
+  #     - "2026-02-06T10:15:00"
+  #   pattern: "timeout"  # timeout | flaky | consistently_failing
+
+# 效能基準 (追蹤測試時間變化)
+performance_baseline:
+  full_test_duration: null  # 完整測試基準時間
+  unit_test_avg: null       # 單元測試平均時間
+  integration_test_avg: null
+  e2e_test_avg: null
+  last_updated: null
+
+# 統計資訊
+statistics:
+  total_incremental_runs: 0
+  total_full_runs: 0
+  total_time_saved: 0  # 秒
+  average_speedup: 0.0  # 倍數
+  cache_hit_rate: 0.0  # 百分比
+
+# 配置
+config:
+  cache_ttl: 86400  # 快取有效期 (秒) - 24小時
+  max_history: 50   # 保留歷史記錄數
+  dependency_scan_interval: 3600  # 依賴圖更新間隔 (秒)
+  auto_clear_cache: false  # 是否自動清除過期快取
+
+# 此檔案應加入 .gitignore (本機快取)
+# 團隊共享配置請使用 .sentinel-config.yaml
