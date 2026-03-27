@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { api } from '../lib/axios'
+import { api } from '@/lib/axios'
 
 export interface Stock {
     symbol: string

@@ -162,6 +162,70 @@ class TechnicalIndicatorService:
             "d": [None if pd.isna(x) else float(x) for x in d],
             "j": [None if pd.isna(x) else float(x) for x in j]
         }
+
+    @staticmethod
+    def calculate_bias(
+        data: List[Dict[str, Any]],
+        periods: List[int] = [5, 10, 20],
+        oversold_threshold: float = -5.0,
+        overbought_threshold: float = 5.0,
+    ) -> Dict[str, List[Optional[float]]]:
+        """
+        Calculate BIAS (deviation rate) and zone labels.
+
+        BIAS formula:
+            (close - MA(n)) / MA(n) * 100
+
+        Zone definition:
+            BIAS < oversold_threshold  -> oversold
+            BIAS > overbought_threshold -> overbought
+            otherwise -> neutral
+        """
+        if not data:
+            result: Dict[str, List[Optional[float]]] = {}
+            for period in periods:
+                result[f"bias{period}"] = []
+                result[f"bias{period}_zone"] = []
+            return result
+
+        df = pd.DataFrame(data)
+        if 'close' not in df.columns:
+            result = {}
+            for period in periods:
+                result[f"bias{period}"] = []
+                result[f"bias{period}_zone"] = []
+            return result
+
+        result = {}
+        close = df['close']
+
+        for period in periods:
+            ma = close.rolling(window=period).mean()
+            bias = ((close - ma) / ma) * 100
+
+            bias_values: List[Optional[float]] = []
+            zone_values: List[Optional[str]] = []
+
+            for raw in bias.tolist():
+                if pd.isna(raw):
+                    bias_values.append(None)
+                    zone_values.append(None)
+                    continue
+
+                value = float(raw)
+                bias_values.append(value)
+
+                if value < oversold_threshold:
+                    zone_values.append("oversold")
+                elif value > overbought_threshold:
+                    zone_values.append("overbought")
+                else:
+                    zone_values.append("neutral")
+
+            result[f"bias{period}"] = bias_values
+            result[f"bias{period}_zone"] = zone_values
+
+        return result
     
     @staticmethod
     def calculate_all_indicators(data: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -178,5 +242,6 @@ class TechnicalIndicatorService:
             "ma": TechnicalIndicatorService.calculate_ma(data),
             "macd": TechnicalIndicatorService.calculate_macd(data),
             "rsi": TechnicalIndicatorService.calculate_rsi(data),
-            "kdj": TechnicalIndicatorService.calculate_kdj(data)
+            "kdj": TechnicalIndicatorService.calculate_kdj(data),
+            "bias": TechnicalIndicatorService.calculate_bias(data)
         }

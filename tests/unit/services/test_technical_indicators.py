@@ -328,6 +328,40 @@ class TestKDJ:
         assert result == {"k": [], "d": [], "j": []}
 
 
+class TestBIAS:
+    """測試 BIAS 指標計算"""
+
+    def test_calculate_bias_formula(self):
+        """BIAS 公式驗證: (close - MA) / MA * 100"""
+        data = [
+            {"date": "2024-01-01", "close": 100.0},
+            {"date": "2024-01-02", "close": 100.0},
+            {"date": "2024-01-03", "close": 100.0},
+            {"date": "2024-01-04", "close": 100.0},
+            {"date": "2024-01-05", "close": 100.0},
+            {"date": "2024-01-06", "close": 95.0},
+        ]
+
+        result = TechnicalIndicatorService.calculate_bias(data, periods=[5])
+
+        # 第 6 天 MA5 = (100+100+100+100+95)/5 = 99, BIAS = (95-99)/99*100 ≈ -4.0404
+        assert result["bias5"][5] == pytest.approx(-4.0404, rel=1e-3)
+
+    def test_calculate_bias_zone_labels(self):
+        """區間標籤: <-5 oversold, >5 overbought, 其餘 neutral"""
+        data = [
+            {"date": f"2024-01-{i:02d}", "close": 100.0}
+            for i in range(1, 6)
+        ]
+        data.append({"date": "2024-01-06", "close": 90.0})   # 明顯超跌
+        data.append({"date": "2024-01-07", "close": 110.0})  # 明顯過熱
+
+        result = TechnicalIndicatorService.calculate_bias(data, periods=[5])
+
+        assert result["bias5_zone"][5] == "oversold"
+        assert result["bias5_zone"][6] == "overbought"
+
+
 class TestAllIndicators:
     """測試綜合指標計算 - TC-005"""
     
