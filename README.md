@@ -1,7 +1,7 @@
 # AuraTrade - AI 驅動的智能投資分析系統
 
-> 🚀 **最後更新**: 2026-01-31  
-> 📊 **完成度**: 後端 95% | 前端 85% | 整體 90%
+> 🚀 **最後更新**: 2026-03-28  
+> 📊 **完成度**: 後端 95% | 前端 90% | 整體 92%
 
 ## ✨ 核心功能
 
@@ -11,8 +11,8 @@
 - ✅ **投資組合** - 持倉管理、交易記錄、損益計算
 - ✅ **價格提醒** - 突破/跌破通知 + LINE 推播
 - ✅ **自選股管理** - 個人化追蹤清單
-- ⚠️ **WebSocket 即時推送** - 後端已完成，前端待整合
-- ⚠️ **定時任務** - 新聞爬蟲排程已實作，待啟動
+- ✅ **WebSocket 即時推送** - 後端與前端已整合（自選股卡片即時更新）
+- ✅ **定時任務** - 新聞爬蟲排程已啟動（隨後端啟動）
 
 ## 🚀 快速開始 (使用 Docker)
 
@@ -106,8 +106,14 @@ flake8 apps/
 # 進入前端容器
 docker-compose exec frontend sh
 
-# 運行測試
-npm test
+# 型別檢查
+npm run type-check
+
+# 代碼檢查
+npm run lint
+
+# 建置
+npm run build
 
 # 代碼格式化
 npm run lint
@@ -158,6 +164,13 @@ docker-compose exec backend alembic downgrade -1
 - `POST /api/v1/stocks/{symbol}/news/fetch` - 抓取新聞
 - `GET /api/v1/recommendations` - AI 推薦
 
+### 市場與選股
+- `GET /api/v1/market/fundamental/{symbol}` - 基本面查詢
+- `GET /api/v1/market/dividend/{symbol}` - 股利資料
+- `GET /api/v1/screener` - 條件選股
+- `GET /api/v1/stocks/trending` - 熱門排行
+- `GET /api/v1/stocks/ai-picks` - AI 強化推薦（免登入）
+
 ### 投資組合
 - `GET /api/v1/positions` - 持倉列表
 - `POST /api/v1/positions` - 新增持倉
@@ -183,7 +196,9 @@ docker-compose exec backend alembic downgrade -1
 docker-compose exec backend pytest
 
 # 前端測試
-docker-compose exec frontend npm test
+docker-compose exec frontend npm run type-check
+docker-compose exec frontend npm run lint
+docker-compose exec frontend npm run build
 
 # 測試特定功能
 curl http://localhost:8000/health  # 健康檢查
@@ -238,7 +253,7 @@ make test-coverage # 覆蓋率報告
 cd backend && pytest
 
 # 前端測試
-cd frontend && npm test
+cd frontend && npm run type-check && npm run lint && npm run build
 ```
 
 **詳細文檔:**
@@ -295,9 +310,31 @@ LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token
 
 ## 🎯 下一步開發計劃
 
-### 優先級 P0 (待整合)
-1. **前端整合 WebSocket** - 將 useStockWebSocket 應用到 WatchlistCard
-2. **啟動定時任務** - 在 main.py 中啟動 news_scheduler
+### 優先級 P0 (穩定性與交付)
+1. **CI/CD 完整落地** - PR 自動檢查、main 自動發版鏡像
+2. **推薦結果 Redis 快取** - 降低 AI 推薦 API 延遲
+
+## 🔄 CI/CD
+
+本專案使用 GitHub Actions，預設包含：
+
+- **CI**: `.github/workflows/ci.yml`
+  - Backend lint + tests
+  - Frontend lint + type-check + build
+  - Docker image build 檢查
+- **CD**: `.github/workflows/cd.yml`
+  - main 分支自動建置並推送 backend/frontend 映像到 Docker Hub
+
+### 需要設定的 GitHub Secrets
+
+- `DOCKER_USERNAME`
+- `DOCKER_PASSWORD`（建議使用 Docker Hub Access Token）
+- `FUGLE_API_KEY`（選用）
+- `ALPHA_VANTAGE_API_KEY`（選用）
+
+### 手動觸發完整回歸測試
+
+- `.github/workflows/tests.yml` 提供手動觸發（`workflow_dispatch`）的回歸流程。
 
 ### 優先級 P1 (優化)
 - 推薦結果 Redis 快取
@@ -327,5 +364,5 @@ LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token
 
 ---
 
-**最後更新**: 2026-01-29  
+**最後更新**: 2026-03-28  
 **版本**: 1.0.0
