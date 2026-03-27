@@ -13,15 +13,16 @@ export interface Transaction {
   transaction_date: string
   notes?: string
   created_at: string
-  updated_at: string
 }
 
 export interface TransactionStats {
   total_transactions: number
   total_buy_amount: number
   total_sell_amount: number
+  total_commission: number
+  total_tax: number
+  net_profit_loss: number
   net_profit: number
-  realized_profit: number
 }
 
 export interface TransactionCreate {
@@ -46,8 +47,12 @@ export const transactionService = {
 
   // 獲取交易統計
   getStats: async (): Promise<TransactionStats> => {
-    const response = await api.get('/transactions/stats')
-    return response.data
+    const response = await api.get('/transactions/summary/stats')
+    const data = response.data
+    return {
+      ...data,
+      net_profit: data.net_profit_loss,
+    }
   },
 
   // 建立交易記錄
@@ -58,6 +63,6 @@ export const transactionService = {
 
   // 刪除交易記錄
   deleteTransaction: async (id: number): Promise<void> => {
-    await api.delete(/transactions/)
+    await api.delete(`/transactions/${id}`)
   }
 }

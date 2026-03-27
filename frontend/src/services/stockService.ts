@@ -1,24 +1,5 @@
 /// <reference types="vite/client" />
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-const api = axios.create({
-    baseURL: `${API_URL}/api/v1`,
-    timeout: 30000,
-})
-
-// Request interceptor to add token
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('access_token')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
-        return config
-    },
-    (error) => Promise.reject(error)
-)
+import { api } from '../lib/axios'
 
 export interface Stock {
     symbol: string
@@ -86,6 +67,23 @@ export interface Recommendation {
     action: 'BUY' | 'SELL' | 'HOLD'
     score: number
     reasons: string[]
+}
+
+interface RecommendationApiStock {
+    symbol: string
+    stock_name?: string
+    name?: string
+    price: number
+    change_percent: number
+    ai_score?: number
+    score?: number
+    reasons: string[]
+    market: string
+}
+
+interface RecommendationApiResponse {
+    total: number
+    stocks: RecommendationApiStock[]
 }
 
 export interface StockData {
@@ -195,9 +193,20 @@ export const stockService = {
         market?: string,
         limit: number = 10
     ): Promise<any[]> => {
-        const response = await api.get<any[]>('/recommendations', {
+        const response = await api.get<RecommendationApiResponse>('/recommendations', {
             params: { market, limit },
         })
-        return response.data
+
+        const stocks = response.data?.stocks || []
+        return stocks.map((item) => ({
+            symbol: item.symbol,
+            name: item.stock_name || item.name || item.symbol,
+            price: item.price,
+            change_percent: item.change_percent,
+            // Backend enhanced score is 0-100, UI card expects roughly 0-10 display.
+            score: Number((((item.ai_score ?? item.score ?? 0) / 10)).toFixed(1)),
+            reasons: item.reasons || [],
+            market: item.market,
+        }))
     }
 }

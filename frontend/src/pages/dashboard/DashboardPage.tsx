@@ -9,7 +9,6 @@ import { useAuthStore } from '../../stores/authStore'
 import { NotificationBell } from '../../components/ui/NotificationBell'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 
 type ViewMode = 'watchlist' | 'recommended' | 'positions' | 'news';
 
@@ -35,14 +34,9 @@ export const DashboardPage = () => {
 
     const fetchWatchlist = async () => {
         try {
-            const token = localStorage.getItem('access_token')
-            if (!token) return
+            const response = await stockService.getWatchlist()
 
-            const response = await axios.get('http://localhost:8000/api/v1/watchlist', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            
-            const stocks = response.data.map((item: any) => ({
+            const stocks = response.map((item: any) => ({
                 id: item.id,
                 symbol: item.stock.symbol,
                 name: item.stock.name,
@@ -197,6 +191,17 @@ export const DashboardPage = () => {
                                     <span className="hidden sm:inline">選股器</span>
                                 </span>
                             </button>
+                            <button
+                                onClick={() => navigate('/transactions')}
+                                className="px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/50 hover:scale-105"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="hidden sm:inline">交易紀錄</span>
+                                </span>
+                            </button>
                         </div>
 
                         {/* User Menu */}
@@ -282,6 +287,12 @@ export const DashboardPage = () => {
                         className="flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg"
                     >
                         🎯 選股器
+                    </button>
+                    <button
+                        onClick={() => navigate('/transactions')}
+                        className="flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg"
+                    >
+                        🧾 交易紀錄
                     </button>
                 </div>
 

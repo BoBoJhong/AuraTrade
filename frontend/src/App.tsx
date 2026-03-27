@@ -6,6 +6,7 @@ import { RegisterPage } from './pages/auth/RegisterPage'
 import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { StockDetailPage } from './pages/stock/StockDetailPage'
 import { StockScreenerPage } from './pages/screener/StockScreenerPage'
+import TransactionsPage from './pages/transactions/TransactionsPage'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -49,6 +50,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <StockScreenerPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/transactions"
+                    element={
+                        <ProtectedRoute>
+                            <TransactionsPage />
                         </ProtectedRoute>
                     }
                 />
