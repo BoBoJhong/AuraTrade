@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { WatchlistItem } from '../../services/stockService'
 import { StockChart } from './StockChart'

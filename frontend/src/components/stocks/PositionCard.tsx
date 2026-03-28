@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { positionService, Position, PortfolioSummary } from '@/services/positionService';
 import { stockService } from '@/services/stockService';
-import { Button } from '@/components/ui/Button';
 import AddPositionModal from './AddPositionModal';
 import EditPositionModal from './EditPositionModal';
 
@@ -83,8 +82,8 @@ export const PositionCard = () => {
             <div className="absolute inset-0 w-16 h-16 border-4 border-pink-500/20 border-b-pink-500 rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
           <div className="text-center">
-            <p className="text-white font-medium">載入投資組合...</p>
-            <p className="text-gray-400 text-sm mt-1">正在計算收益</p>
+            <p className="text-slate-900 font-semibold">載入投資組合...</p>
+            <p className="text-slate-500 text-sm mt-1">正在計算收益</p>
           </div>
           {/* 骨架屏 */}
           <div className="w-full space-y-3 mt-6">
@@ -110,7 +109,7 @@ export const PositionCard = () => {
           
           <div className="relative">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                 <span>📊</span> 投資組合總覽
               </h3>
               <div className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm font-medium">
@@ -126,7 +125,7 @@ export const PositionCard = () => {
                     <span className="text-base">💼</span>
                   </div>
                 </div>
-                <p className="text-2xl lg:text-3xl font-bold text-white">{summary.total_positions}</p>
+                <p className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">{summary.total_positions}</p>
                 <p className="text-xs text-gray-500 mt-1">支股票</p>
               </div>
               
@@ -137,7 +136,7 @@ export const PositionCard = () => {
                     <span className="text-base">💰</span>
                   </div>
                 </div>
-                <p className="text-2xl lg:text-3xl font-bold text-white">${summary.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                <p className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">${summary.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 <p className="text-xs text-gray-500 mt-1">投入資金</p>
               </div>
               
@@ -148,7 +147,7 @@ export const PositionCard = () => {
                     <span className="text-base">💵</span>
                   </div>
                 </div>
-                <p className="text-2xl lg:text-3xl font-bold text-white">
+                <p className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
                   ${(() => {
                     const totalMarketValue = positions.reduce((sum, pos) => {
                       const currentPrice = latestPrices[pos.symbol] || pos.current_price || 0;
@@ -228,7 +227,7 @@ export const PositionCard = () => {
       <div className="glass rounded-2xl p-6 lg:p-8 border border-white/20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <span>📈</span> 持倉明細
             </h3>
             <p className="text-sm text-gray-400 mt-1">共 {positions.length} 筆持倉記錄</p>
@@ -268,24 +267,24 @@ export const PositionCard = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-lg font-bold text-white">{pos.symbol}</h4>
+                      <h4 className="text-lg font-bold text-slate-900">{pos.symbol}</h4>
                       <span className="text-sm text-gray-400">x {pos.quantity}</span>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
                         <p className="text-gray-500">買入均價</p>
-                        <p className="text-white font-medium">${pos.buy_price.toFixed(2)}</p>
+                        <p className="text-slate-800 font-semibold">${pos.buy_price.toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">當前價</p>
-                        <p className="text-white font-medium">
+                        <p className="text-slate-800 font-semibold">
                           ${currentPrice.toFixed(2)}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-500">成本</p>
-                        <p className="text-white font-medium">${pos.cost.toFixed(2)}</p>
+                        <p className="text-slate-800 font-semibold">${pos.cost.toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">損益</p>

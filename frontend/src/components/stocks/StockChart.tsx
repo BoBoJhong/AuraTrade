@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, Legend, ComposedChart, Bar, ReferenceLine } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, Legend, ComposedChart, Bar, ReferenceLine, Cell } from 'recharts'
 import { stockService, TechnicalIndicators } from '../../services/stockService'
 
 interface StockChartProps {
@@ -30,9 +30,15 @@ interface ChartData {
 
 // Custom Candlestick Shape Component
 const Candlestick = (props: any) => {
-    const { fill, x, y, width, height, payload } = props
+    const { x, y, width, height, payload } = props
     
-    if (!payload || !payload.open || !payload.close || !payload.high || !payload.low) {
+    if (
+        !payload ||
+        payload.open == null ||
+        payload.close == null ||
+        payload.high == null ||
+        payload.low == null
+    ) {
         return null
     }
     
@@ -46,7 +52,6 @@ const Candlestick = (props: any) => {
     const priceRange = maxPrice - minPrice || 1
     
     // Calculate pixel positions
-    const bodyTop = Math.min(open, close)
     const bodyBottom = Math.max(open, close)
     const bodyHeight = Math.abs(close - open)
     
@@ -124,8 +129,8 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
             // Merge data with indicators
             const mergedData = sortedData.map((item, index) => {
                 // 如果沒有 OHLC 數據，使用 price 模擬
-                const price = item.price || item.close
-                const hasOHLC = item.open && item.high && item.low
+                const price = item.price ?? item.close ?? 0
+                const hasOHLC = item.open != null && item.high != null && item.low != null
                 
                 // 使用索引作為種子，產生確定性的漲跌（紅綠交替）
                 const isUp = (index + Math.floor(price)) % 3 !== 0 // 約 2/3 機率上漲
@@ -180,7 +185,7 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
         let totalScore = 0
 
         // 1. MA 趨勢分析（權重: 2 分）
-        if (latest.ma5 && latest.ma10 && latest.price) {
+        if (latest.ma5 != null && latest.ma10 != null && latest.price != null) {
             if (latest.price > latest.ma5 && latest.ma5 > latest.ma10) {
                 signals.push({ signal: '多頭排列', reason: '價格 > MA5 > MA10', score: 2 })
                 totalScore += 2
@@ -193,7 +198,7 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
         }
 
         // 2. MACD 分析（權重: 2 分）
-        if (latest.macd !== null && latest.signal !== null && latest.histogram !== null) {
+        if (latest.macd != null && latest.signal != null && latest.histogram != null) {
             if (latest.histogram > 0 && latest.macd > latest.signal) {
                 signals.push({ signal: 'MACD 多頭', reason: 'Histogram > 0, MACD > Signal', score: 2 })
                 totalScore += 2
@@ -206,7 +211,7 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
         }
 
         // 3. RSI 分析（權重: 2 分）
-        if (latest.rsi !== null) {
+        if (latest.rsi != null) {
             if (latest.rsi < 30) {
                 signals.push({ signal: 'RSI 超賣', reason: `RSI = ${latest.rsi.toFixed(1)} < 30`, score: 2 })
                 totalScore += 2
@@ -219,7 +224,7 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
         }
 
         // 4. KDJ 分析（權重: 2 分）
-        if (latest.kdj_k !== null && latest.kdj_d !== null) {
+        if (latest.kdj_k != null && latest.kdj_d != null) {
             if (latest.kdj_k > latest.kdj_d && latest.kdj_k < 80) {
                 signals.push({ signal: 'KDJ 金叉', reason: `K(${latest.kdj_k.toFixed(1)}) > D(${latest.kdj_d.toFixed(1)})`, score: 2 })
                 totalScore += 2
@@ -240,8 +245,8 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
         // 5. K 線型態分析（權重: 1 分）
         if (data.length >= 3) {
             const recent3 = data.slice(-3)
-            const greenCount = recent3.filter(d => d.close < d.open).length
-            const redCount = recent3.filter(d => d.close > d.open).length
+            const greenCount = recent3.filter(d => d.close < (d.open ?? d.close)).length
+            const redCount = recent3.filter(d => d.close > (d.open ?? d.close)).length
             
             if (redCount >= 2) {
                 signals.push({ signal: '近期上漲', reason: `最近 3 根 K 線: ${redCount} 紅 ${greenCount} 綠`, score: 1 })
@@ -585,9 +590,9 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
                             name="成交量"
                         >
                             {data.map((entry, index) => (
-                                <Bar
+                                <Cell
                                     key={`vol-${index}`}
-                                    fill={entry.close >= entry.open ? '#ff0000' : '#00ff00'}
+                                    fill={entry.close >= (entry.open ?? entry.close) ? '#ff0000' : '#00ff00'}
                                 />
                             ))}
                         </Bar>
@@ -633,9 +638,9 @@ export const StockChart = ({ symbol, className = '' }: StockChartProps) => {
                             name="Histogram"
                         >
                             {data.map((entry, index) => (
-                                <Bar
+                                <Cell
                                     key={`bar-${index}`}
-                                    fill={entry.histogram && entry.histogram >= 0 ? '#ef4444' : '#22c55e'}
+                                    fill={(entry.histogram ?? 0) >= 0 ? '#ef4444' : '#22c55e'}
                                 />
                             ))}
                         </Bar>

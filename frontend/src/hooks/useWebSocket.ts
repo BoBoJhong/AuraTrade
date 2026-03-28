@@ -13,7 +13,7 @@ export const useStockWebSocket = (symbol: string, enabled: boolean = true) => {
     const [priceData, setPriceData] = useState<PriceUpdate | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const wsRef = useRef<WebSocket | null>(null)
-    const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
         if (!enabled || !symbol) return

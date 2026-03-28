@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { NewsPanel } from '@/components/stocks/NewsPanel';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart, Area, AreaChart
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart, Area
 } from 'recharts';
 
 type IndicatorType = 'MA' | 'EMA' | 'MACD' | 'RSI' | 'KDJ' | 'BB';

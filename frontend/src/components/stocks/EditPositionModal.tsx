@@ -167,7 +167,7 @@ const EditPositionModal: React.FC<EditPositionModalProps> = ({
               </div>
               <div>
                 <p className="text-gray-400">市值</p>
-                <p className="text-white font-semibold">${position.market_value.toFixed(2)}</p>
+                <p className="text-white font-semibold">${(position.market_value ?? 0).toFixed(2)}</p>
               </div>
               <div className="col-span-2">
                 <p className="text-gray-400">損益</p>

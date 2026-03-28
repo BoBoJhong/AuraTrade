@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@/lib/axios'
-import type { User, LoginRequest, RegisterRequest, AuthResponse } from '../types/auth'
+import type { User, LoginRequest, RegisterRequest } from '../types/auth'
 
 interface AuthState {
     user: User | null

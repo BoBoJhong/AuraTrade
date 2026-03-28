@@ -9,18 +9,6 @@ import {
 import { Button } from '@/components/ui/Button';
 
 type ViewMode = 'screener' | 'trending' | 'ai-picks';
-type SortField = 'price' | 'change_percent' | 'volume' | 'market_cap' | 'pe_ratio';
-type SortOrder = 'asc' | 'desc';
-
-// 快捷篩選模板
-const QUICK_FILTERS = {
-  highDividend: { name: '高殖利率股', filters: { min_dividend_yield: 4, limit: 50 } },
-  lowPE: { name: '低本益比股', filters: { min_pe_ratio: 5, max_pe_ratio: 15, limit: 50 } },
-  oversold: { name: 'RSI超賣股', filters: { rsi_min: 0, rsi_max: 30, limit: 50 } },
-  overbought: { name: 'RSI超買股', filters: { rsi_min: 70, rsi_max: 100, limit: 50 } },
-  highVolume: { name: '高成交量股', filters: { min_volume: 5000000, limit: 50 } },
-  smallCap: { name: '小型股', filters: { min_market_cap: 10, max_market_cap: 100, limit: 50 } }
-};
 
 export const StockScreenerPage = () => {
   const navigate = useNavigate();
@@ -31,9 +19,6 @@ export const StockScreenerPage = () => {
   const [screenedStocks, setScreenedStocks] = useState<ScreenedStock[]>([]);
   const [aiPicks, setAIPicks] = useState<AIPickStock[]>([]);
   const [trendingStocks, setTrendingStocks] = useState<ScreenedStock[]>([]);
-  const [sortField, setSortField] = useState<SortField>('change_percent');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [showFilters, setShowFilters] = useState(true);
   
   // 篩選條件
   const [filters, setFilters] = useState<ScreenerFilters>({
@@ -115,38 +100,6 @@ export const StockScreenerPage = () => {
   const handleReset = () => {
     setFilters({ limit: 50 });
     setScreenedStocks([]);
-  };
-
-  const applyQuickFilter = (filterKey: keyof typeof QUICK_FILTERS) => {
-    const quickFilter = QUICK_FILTERS[filterKey];
-    setFilters({ ...quickFilter.filters });
-    setScreenedStocks([]);
-  };
-
-  const sortStocks = (stocks: ScreenedStock[], field: SortField, order: SortOrder) => {
-    return [...stocks].sort((a, b) => {
-      let aVal = a[field] || 0;
-      let bVal = b[field] || 0;
-      return order === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-  };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-
-  const getSortedStocks = () => {
-    if (viewMode === 'screener') {
-      return sortStocks(screenedStocks, sortField, sortOrder);
-    } else if (viewMode === 'trending') {
-      return sortStocks(trendingStocks, sortField, sortOrder);
-    }
-    return [];
   };
 
   const goToStockDetail = (symbol: string) => {
@@ -401,7 +354,7 @@ export const StockScreenerPage = () => {
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📊</div>
                 <p className="text-gray-300 text-lg">暫無熱門股票數據</p>
-                <Button onClick={loadData} className="mt-4">
+                <Button onClick={() => loadData()} className="mt-4">
                   重新載入
                 </Button>
               </div>
@@ -459,7 +412,7 @@ export const StockScreenerPage = () => {
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🤖</div>
                   <p className="text-gray-300 text-lg">暫無 AI 推薦數據</p>
-                  <Button onClick={loadData} className="mt-4">
+                  <Button onClick={() => loadData()} className="mt-4">
                     重新載入
                   </Button>
                 </div>

@@ -4,7 +4,15 @@ Database Configuration
 """
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from apps.core.config import settings
+
+
+@compiles(PG_UUID, "sqlite")
+def compile_uuid_sqlite(_type, _compiler, **_kw):
+    """Map PostgreSQL UUID columns to CHAR(36) when running on SQLite."""
+    return "CHAR(36)"
 
 # Create async engine with SQLite compatibility
 engine_kwargs = {

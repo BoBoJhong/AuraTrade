@@ -10,12 +10,13 @@ interface RecommendedStock {
   score: number;
   reasons: string[];
   market: string;
+  bias_5?: number;
+  bias_zone?: 'oversold' | 'neutral' | 'overbought';
 }
 
 export const RecommendedStocks = () => {
   const [recommendations, setRecommendations] = useState<RecommendedStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,13 +26,11 @@ export const RecommendedStocks = () => {
   const fetchRecommendations = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       // 調用後端 AI 推薦 API
       const data = await stockService.getRecommendations(undefined, 10);
       setRecommendations(data);
     } catch (err: any) {
       console.error('Failed to fetch recommendations:', err);
-      setError(err.message || '無法載入推薦股票');
       // 使用備援 Mock 數據
       const fallbackRecommendations: RecommendedStock[] = [
         {
@@ -41,7 +40,9 @@ export const RecommendedStocks = () => {
           change_percent: 2.5,
           score: 8.5,
           reasons: ['多頭排列', 'MACD 金叉', 'RSI 強勢'],
-          market: 'TW'
+          market: 'TW',
+          bias_5: -6.2,
+          bias_zone: 'oversold'
         },
         {
           symbol: 'NVDA',
@@ -50,7 +51,9 @@ export const RecommendedStocks = () => {
           change_percent: 4.2,
           score: 9.0,
           reasons: ['強勢上漲', 'AI 題材', 'MACD 多頭'],
-          market: 'US'
+          market: 'US',
+          bias_5: 7.1,
+          bias_zone: 'overbought'
         }
       ];
       setRecommendations(fallbackRecommendations);
@@ -73,13 +76,13 @@ export const RecommendedStocks = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
             <span className="text-3xl">🎯</span>
             AI 推薦股票
           </h2>
-          <p className="text-sm text-gray-400 mt-1">基於技術分析與市場趨勢的智能推薦</p>
+          <p className="text-sm text-slate-600 mt-1">基於技術分析與市場趨勢的智能推薦</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-slate-500">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
           </svg>
@@ -91,6 +94,17 @@ export const RecommendedStocks = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {recommendations.map((stock, index) => {
           const isPositive = stock.change_percent >= 0;
+          const biasText = stock.bias_5 !== undefined ? `${stock.bias_5.toFixed(1)}%` : '--';
+          const biasStyle = stock.bias_zone === 'oversold'
+            ? 'bg-green-500/20 text-green-300 border-green-500/40'
+            : stock.bias_zone === 'overbought'
+              ? 'bg-red-500/20 text-red-300 border-red-500/40'
+              : 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+          const biasLabel = stock.bias_zone === 'oversold'
+            ? '超跌區'
+            : stock.bias_zone === 'overbought'
+              ? '過熱區'
+              : '中性區';
           
           return (
             <div
@@ -103,7 +117,7 @@ export const RecommendedStocks = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-xl font-bold text-white">{stock.symbol}</h3>
+                    <h3 className="text-xl font-bold text-slate-900">{stock.symbol}</h3>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       stock.market === 'TW' 
                         ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
@@ -112,7 +126,7 @@ export const RecommendedStocks = () => {
                       {stock.market === 'TW' ? '台股' : stock.market}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-400">{stock.name}</p>
+                  <p className="text-sm text-slate-600">{stock.name}</p>
                 </div>
 
                 {/* Score Badge */}
@@ -124,13 +138,13 @@ export const RecommendedStocks = () => {
                   } shadow-lg`}>
                     <span className="text-white font-bold text-lg">{stock.score}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">評分</p>
+                  <p className="text-xs text-slate-500 mt-1">評分</p>
                 </div>
               </div>
 
               {/* Price Info */}
               <div className="flex items-baseline gap-3 mb-4">
-                <span className="text-3xl font-bold text-white">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                   ${stock.price.toFixed(2)}
                 </span>
                 <span className={`text-lg font-semibold ${
@@ -140,9 +154,17 @@ export const RecommendedStocks = () => {
                 </span>
               </div>
 
+              {/* BIAS Signal */}
+              <div className="mb-4">
+                <div className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border ${biasStyle}`}>
+                  <span className="font-semibold">BIAS(5): {biasText}</span>
+                  <span>{biasLabel}</span>
+                </div>
+              </div>
+
               {/* Reasons */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">推薦理由:</p>
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">推薦理由:</p>
                 <div className="flex flex-wrap gap-2">
                   {stock.reasons.map((reason, idx) => (
                     <span
@@ -158,7 +180,7 @@ export const RecommendedStocks = () => {
               {/* View Details Button */}
               <div className="mt-4 pt-4 border-t border-gray-700/50">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">點擊查看完整分析</span>
+                    <span className="text-slate-600">點擊查看完整分析</span>
                   <svg className="w-5 h-5 text-indigo-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

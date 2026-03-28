@@ -28,7 +28,6 @@ export const TransactionHistory = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [summary, setSummary] = useState<TransactionSummary | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [showAddModal, setShowAddModal] = useState(false)
     const [filterSymbol, setFilterSymbol] = useState('')
     const [filterType, setFilterType] = useState<'' | 'buy' | 'sell'>('')
 

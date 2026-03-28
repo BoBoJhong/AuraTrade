@@ -14,13 +14,13 @@ export const Button = ({
     disabled,
     ...props
 }: ButtonProps) => {
-    const baseStyles = "relative w-full py-3.5 px-6 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 overflow-hidden group"
+    const baseStyles = "relative w-full py-3.5 px-6 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 overflow-hidden group focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
 
     const variants = {
-        primary: "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white hover:shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-[0.98]",
-        secondary: "bg-gray-800 text-white hover:bg-gray-700 border-2 border-gray-700 hover:border-gray-600",
-        outline: "border-2 border-gray-700 text-gray-300 hover:bg-gray-800/50 hover:border-indigo-500/50",
-        danger: "bg-gradient-to-r from-red-600 to-pink-600 text-white hover:shadow-lg hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98]"
+        primary: "bg-gradient-to-r from-indigo-600 via-sky-600 to-cyan-600 text-white hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.01] active:scale-[0.98]",
+        secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200 border-2 border-slate-200 hover:border-slate-300",
+        outline: "border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-indigo-400",
+        danger: "bg-gradient-to-r from-rose-600 to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30 hover:scale-[1.01] active:scale-[0.98]"
     }
 
     return (

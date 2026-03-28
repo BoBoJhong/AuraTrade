@@ -88,16 +88,16 @@ export const DashboardPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 relative overflow-hidden">
+        <div className="light-dashboard min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50 relative overflow-hidden">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute top-1/3 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
-                <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}} />
+                <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-400/15 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute top-1/3 -right-40 w-96 h-96 bg-sky-400/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+                <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-cyan-400/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}} />
             </div>
 
             {/* Glassmorphism Navbar */}
-            <nav className="glass border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl shadow-2xl safe-padding">
+            <nav className="glass border-b border-slate-200 sticky top-0 z-50 backdrop-blur-xl shadow-sm safe-padding">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16 lg:h-20">
                         {/* Brand */}
@@ -111,10 +111,10 @@ export const DashboardPage = () => {
                                 </div>
                             </div>
                             <div className="hidden sm:block">
-                                <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                                <span className="text-xl lg:text-2xl font-extrabold bg-gradient-to-r from-indigo-700 via-sky-700 to-cyan-700 bg-clip-text text-transparent tracking-tight">
                                     AuraTrade
                                 </span>
-                                <p className="text-xs text-gray-400 font-medium hidden lg:block">AI-Powered Platform</p>
+                                <p className="text-xs text-slate-500 font-medium hidden lg:block">AI-Powered Platform</p>
                             </div>
                         </div>
 
@@ -220,8 +220,8 @@ export const DashboardPage = () => {
                                     {user?.username?.[0]?.toUpperCase()}
                                 </div>
                                 <div className="text-right hidden lg:block">
-                                    <p className="text-sm font-semibold text-white">{user?.username}</p>
-                                    <p className="text-xs text-indigo-300">{user?.role === 'admin' ? '👑 管理員' : '✨ 會員'}</p>
+                                    <p className="text-sm font-semibold text-slate-900">{user?.username}</p>
+                                    <p className="text-xs text-indigo-600">{user?.role === 'admin' ? '👑 管理員' : '✨ 會員'}</p>
                                 </div>
                             </div>
                             <button
@@ -322,7 +322,7 @@ export const DashboardPage = () => {
                             <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1 md:w-1.5 h-8 md:h-10 bg-gradient-to-b from-indigo-400 via-purple-500 to-pink-500 rounded-full shadow-lg"></div>
-                                    <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-white via-indigo-100 to-purple-100 bg-clip-text text-transparent">我的自選股</h2>
+                                        <h2 className="text-2xl md:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-800 to-cyan-800 bg-clip-text text-transparent tracking-tight">我的自選股</h2>
                                 </div>
                                 <div className="flex-1 h-px bg-gradient-to-r from-indigo-500/50 to-transparent"></div>
                             </div>
@@ -335,7 +335,7 @@ export const DashboardPage = () => {
                                 <div className="flex items-center gap-3 md:gap-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-1 md:w-1.5 h-8 md:h-10 bg-gradient-to-b from-emerald-400 via-teal-500 to-cyan-500 rounded-full shadow-lg"></div>
-                                        <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-white via-emerald-100 to-teal-100 bg-clip-text text-transparent">市場快訊</h2>
+                                        <h2 className="text-2xl md:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-emerald-700 to-teal-700 bg-clip-text text-transparent tracking-tight">市場快訊</h2>
                                     </div>
                                     <span className="hidden sm:inline-flex px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-300 font-medium">🤖 AI 分析</span>
                                 </div>
@@ -379,7 +379,7 @@ export const DashboardPage = () => {
                         <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                             <div className="flex items-center gap-2">
                                 <div className="w-1 md:w-1.5 h-8 md:h-10 bg-gradient-to-b from-yellow-400 via-orange-500 to-red-500 rounded-full shadow-lg"></div>
-                                <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-white via-yellow-100 to-orange-100 bg-clip-text text-transparent">AI 推薦</h2>
+                                <h2 className="text-2xl md:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-amber-700 to-orange-700 bg-clip-text text-transparent tracking-tight">AI 推薦</h2>
                             </div>
                             <div className="flex-1 h-px bg-gradient-to-r from-yellow-500/50 to-transparent"></div>
                         </div>
@@ -392,7 +392,7 @@ export const DashboardPage = () => {
                         <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                             <div className="flex items-center gap-2">
                                 <div className="w-1 md:w-1.5 h-8 md:h-10 bg-gradient-to-b from-purple-400 via-pink-500 to-rose-500 rounded-full shadow-lg"></div>
-                                <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">投資組合</h2>
+                                <h2 className="text-2xl md:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-purple-700 to-rose-700 bg-clip-text text-transparent tracking-tight">投資組合</h2>
                             </div>
                             <div className="flex-1 h-px bg-gradient-to-r from-purple-500/50 to-transparent"></div>
                         </div>

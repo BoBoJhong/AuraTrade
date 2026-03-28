@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { stockService, Stock } from '../../services/stockService'
-import { Input } from '../ui/Input'
 
 interface StockSearchProps {
     onSelect: (stock: Stock) => void

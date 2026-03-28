@@ -31,6 +31,8 @@ export interface AIPickStock extends ScreenedStock {
   ai_score: number;
   reasons: string[];
   recommendation: string;
+  bias_5?: number;
+  bias_zone?: 'oversold' | 'neutral' | 'overbought';
 }
 
 export interface ScreenerResponse {

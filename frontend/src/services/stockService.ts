@@ -20,6 +20,10 @@ export interface WatchlistItem {
 export interface HistoricalData {
     date: string
     price: number
+    open?: number
+    high?: number
+    low?: number
+    close?: number
     volume?: number
 }
 
@@ -79,11 +83,14 @@ interface RecommendationApiStock {
     score?: number
     reasons: string[]
     market: string
+    bias_5?: number
+    bias_zone?: 'oversold' | 'neutral' | 'overbought'
 }
 
 interface RecommendationApiResponse {
     total: number
-    stocks: RecommendationApiStock[]
+    stocks?: RecommendationApiStock[]
+    recommendations?: RecommendationApiStock[]
 }
 
 export interface StockData {
@@ -134,6 +141,10 @@ export const stockService = {
         return response.data.map((item: any) => ({
             date: item.date,
             price: item.close,
+            open: item.open,
+            high: item.high,
+            low: item.low,
+            close: item.close,
             volume: item.volume
         }))
     },
@@ -197,7 +208,7 @@ export const stockService = {
             params: { market, limit },
         })
 
-        const stocks = response.data?.stocks || []
+        const stocks = response.data?.recommendations || response.data?.stocks || []
         return stocks.map((item) => ({
             symbol: item.symbol,
             name: item.stock_name || item.name || item.symbol,
@@ -207,6 +218,8 @@ export const stockService = {
             score: Number((((item.ai_score ?? item.score ?? 0) / 10)).toFixed(1)),
             reasons: item.reasons || [],
             market: item.market,
+            bias_5: item.bias_5,
+            bias_zone: item.bias_zone,
         }))
     }
 }

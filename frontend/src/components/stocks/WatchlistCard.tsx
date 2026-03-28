@@ -119,8 +119,8 @@ export const WatchlistCard = () => {
                         <div className="absolute inset-0 w-16 h-16 border-4 border-purple-500/20 border-b-purple-500 rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
                     </div>
                     <div className="text-center">
-                        <p className="text-white font-medium">載入自選股中...</p>
-                        <p className="text-gray-400 text-sm mt-1">正在獲取即時數據</p>
+                        <p className="text-slate-900 font-semibold">載入自選股中...</p>
+                        <p className="text-slate-500 text-sm mt-1">正在獲取即時數據</p>
                     </div>
                     {/* 骨架屏預覽 */}
                     <div className="w-full space-y-3 mt-6">
@@ -155,25 +155,25 @@ export const WatchlistCard = () => {
                         </div>
                     </div>
                     
-                    <h3 className="text-2xl font-bold text-white mb-3">開始建立您的投資組合</h3>
-                    <p className="text-gray-300 text-base mb-2">目前尚未加入任何關注股票</p>
+                    <h3 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">開始建立您的投資組合</h3>
+                    <p className="text-slate-700 text-base mb-2">目前尚未加入任何關注股票</p>
                     <p className="text-gray-500 text-sm mb-6">使用上方搜尋功能，開始追蹤您感興趣的股票</p>
                     
                     {/* 特色提示 */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
                         <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-indigo-500/50 transition-all">
                             <div className="text-3xl mb-2">📊</div>
-                            <p className="text-sm text-gray-300 font-medium">即時追蹤</p>
+                            <p className="text-sm text-slate-700 font-semibold">即時追蹤</p>
                             <p className="text-xs text-gray-500 mt-1">查看股價走勢圖表</p>
                         </div>
                         <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-purple-500/50 transition-all">
                             <div className="text-3xl mb-2">🔔</div>
-                            <p className="text-sm text-gray-300 font-medium">價格提醒</p>
+                            <p className="text-sm text-slate-700 font-semibold">價格提醒</p>
                             <p className="text-xs text-gray-500 mt-1">設定漲跌通知</p>
                         </div>
                         <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-pink-500/50 transition-all">
                             <div className="text-3xl mb-2">🤖</div>
-                            <p className="text-sm text-gray-300 font-medium">AI 分析</p>
+                            <p className="text-sm text-slate-700 font-semibold">AI 分析</p>
                             <p className="text-xs text-gray-500 mt-1">智能投資建議</p>
                         </div>
                     </div>
@@ -193,7 +193,7 @@ export const WatchlistCard = () => {
                             <span className="text-lg">📊</span>
                         </div>
                     </div>
-                    <p className="text-xl lg:text-2xl font-bold text-white">{watchlist.length}</p>
+                    <p className="text-xl lg:text-2xl font-extrabold text-slate-900 tracking-tight">{watchlist.length}</p>
                     <p className="text-xs text-gray-500 mt-1">支股票</p>
                 </div>
                 

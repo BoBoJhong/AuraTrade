@@ -122,6 +122,38 @@ class EnhancedAIRecommendationEngine:
         avg_volume = np.mean(volumes[-period-1:-1])
         
         return current_volume / avg_volume if avg_volume > 0 else 1.0
+
+    @staticmethod
+    def _calculate_bias(prices: List[float], period: int = 5) -> Dict:
+        """
+        計算 BIAS（乖離率）
+
+        公式：
+            BIAS = (當日收盤價 - N日移動平均價) / N日移動平均價 * 100
+        """
+        if len(prices) < period:
+            return {}
+
+        ma_n = np.mean(prices[-period:])
+        if ma_n == 0:
+            return {}
+
+        current_price = prices[-1]
+        bias = ((current_price - ma_n) / ma_n) * 100
+
+        if bias < -5:
+            zone = "oversold"
+        elif bias > 5:
+            zone = "overbought"
+        else:
+            zone = "neutral"
+
+        return {
+            'period': period,
+            'ma': round(ma_n, 2),
+            'bias': round(bias, 2),
+            'zone': zone,
+        }
     
     @staticmethod
     async def _calculate_advanced_technical_score(
@@ -232,6 +264,23 @@ class EnhancedAIRecommendationEngine:
                 
                 if current > ma5:
                     score += 3
+
+            # 4.1 BIAS (乖離率)
+            if len(closes) >= 5:
+                bias5 = EnhancedAIRecommendationEngine._calculate_bias(closes, period=5)
+                if bias5:
+                    indicators['bias_5'] = bias5
+                    bias_val = bias5['bias']
+                    bias_zone = bias5['zone']
+
+                    if bias_zone == 'oversold':
+                        score += 12
+                        reasons.append(f"BIAS 超跌 ({bias_val:.1f}%)")
+                    elif bias_zone == 'overbought':
+                        score -= 10
+                        reasons.append(f"BIAS 過熱 ({bias_val:.1f}%)")
+                    else:
+                        reasons.append(f"BIAS 中性 ({bias_val:.1f}%)")
             
             # 5. 量比分析
             if len(volumes) >= 6:
@@ -590,6 +639,8 @@ class EnhancedAIRecommendationEngine:
                 'fundamental_data': fund_data,
                 'news_sentiment': sentiment_label,
                 'latest_news': latest_news,
+                'bias_5': tech_indicators.get('bias_5', {}).get('bias'),
+                'bias_zone': tech_indicators.get('bias_5', {}).get('zone'),
                 'recommended_at': datetime.utcnow()
             }
             
